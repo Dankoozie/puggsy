@@ -1,0 +1,156 @@
+from socket import *
+import threading
+import contacts, struct, time, random
+import binascii
+import messages
+
+lan_contacts = {}
+
+#Set up socket stuff
+sock = socket(AF_INET6, SOCK_DGRAM)
+lsock = socket(AF_INET6, SOCK_DGRAM)
+bcast_addr = "ff02::1"
+bcast_port = 49091
+listen_port = 49091
+bcast_time = 1
+bcast_remove_factor = 3.1
+bcast_running = True
+sock.bind(('',listen_port))
+
+def gen_lan_uid():
+    g = b''
+    for i in range(24):
+        g = g + bytes([random.randint(0,255)])
+    return g
+
+lan_uid = gen_lan_uid()
+
+
+def nfid_lan():
+    if len(lan_contacts) == 0: return 0
+    for i in range(max(lan_contacts) + 2):
+        if(i in lan_contacts):
+                continue
+        else:
+                return i
+
+def peer_exists(uid):
+    for i in lan_contacts:
+        if(lan_contacts[i].b_uid == uid): return True
+    return False
+        
+def peer_by_uid(uid):
+    for i in lan_contacts:
+        if(lan_contacts[i].b_uid == uid): return i
+    return False
+
+class lancontact():
+    def __init__(self,nick,addr,port,uid):
+        self.nfid = None
+        self.b_nick = nick
+        self.b_addr = addr
+        self.b_port = port
+        self.b_uid = uid
+        self.b_lastrcvd = time.time()
+        self.b_created = time.time()
+        self.autodel = True
+        self.maincontact = -1
+        
+    def update_maincontact(self):
+        #Create if not present
+        if(self.maincontact == -1):
+            mc = contacts.Contact()
+            self.maincontact = mc.nfid
+
+        contacts.Contactlist[self.maincontact].set_nick(str(self.b_nick,'UTF-8'))
+                   
+    def addself(self):
+        self.nfid = nfid_lan()
+        lan_contacts[self.nfid] = self
+        self.update_maincontact()
+        contacts.Contactlist[self.maincontact].add_transport("lan",self.nfid)
+        
+    def __del__(self):
+        if(self.maincontact != -1):
+            ctd = contacts.Contactlist[self.maincontact]
+            del(ctd.Transports["lan"])
+            if(ctd.autodel and (ctd.Transports == {})):
+                del contacts.Contactlist[self.maincontact]
+        print("Delself - Transport")
+    
+def process_broadcast(addr,packet):
+    uid = packet[2:26]
+    interval = packet[1]
+    nick = packet[26:]
+    address = addr[0]
+    port = addr[1]
+
+    curcontact = (nick,address,port,uid)
+
+    #Ignore packets from self 
+    if(uid == lan_uid): return
+
+    print("Incoming broadcast\n Nick:" + str(nick,'UTF-8') + "\nUID: " + str(binascii.hexlify(uid),'utf-8'))
+    if not peer_exists(uid):
+       print("New contact discovered")
+       Contactobject = lancontact(nick,address,port,uid)
+       Contactobject.addself()
+    else:
+        existing_peer = peer_by_uid(uid)
+        lan_contacts[existing_peer].b_nick = nick
+        lan_contacts[existing_peer].b_addr = address
+        lan_contacts[existing_peer].b_port = port
+        lan_contacts[existing_peer].update_maincontact()
+        lan_contacts[existing_peer].b_lastrcvd = time.time()
+        print("Existing contact found")
+    
+def process_unsecuredmsg(addr,packet):
+    peer = peer_by_uid(packet[1:25])
+    print("Unsec msg incoming")
+    if(lan_contacts[peer].b_uid == packet[1:25]):
+        mc = lan_contacts[peer].maincontact
+        messages.process_message(mc,"lan","None",packet[25:])
+        
+
+def process_received(addr, packet):
+    #Process broadcast packet
+    #print("Packet received")
+    if(packet[0] == 66): process_broadcast(addr,packet)
+    if(packet[0] == 85): process_unsecuredmsg(addr,packet)                  
+    
+def bcast():
+    checktimeouts()
+   # print("BCasting")
+    hdr = struct.pack("BB",66,bcast_time)
+    sock.sendto(hdr + lan_uid + bytes(contacts.Myself.nick,'UTF-8'),(bcast_addr,bcast_port))
+    if(bcast_running): threading.Timer(bcast_time,bcast).start()
+    
+
+def send_unsecuredmsg(lc,msg):
+    hdr = struct.pack("B",85) + lan_uid + bytes(msg,'UTF-8')
+    if(lan_contacts[lc]):
+            print("Sending unsec msg \n Addr:" + lan_contacts[lc].b_addr +"\n Port:" + str(lan_contacts[lc].b_port))
+            sock.sendto(hdr,(lan_contacts[lc].b_addr,lan_contacts[lc].b_port))
+
+def sendmsg(mc,msg):
+    lc = mc.Transports['lan']
+    send_unsecuredmsg(lc,msg)
+
+def checktimeouts():
+    tdel = []
+    for lc in lan_contacts:   
+        if((time.time() - lan_contacts[lc].b_lastrcvd) > (bcast_time * bcast_remove_factor)):
+            tdel.append(lc)
+    for lc in tdel: del(lan_contacts[lc])
+    
+class listen(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+        self.recvd = 0
+    def run(self):
+        while True:
+           data, addr = sock.recvfrom(1024)
+           process_received(addr, data)
+bcast()
+listener = listen()
+listener.start()
