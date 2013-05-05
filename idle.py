@@ -38,8 +38,9 @@ def sendmsg(blah):
     messages.send_message(contacts.Selected,"lan",None,sb.get_text())
 
 def msgbox_keypress(widge,event):
-    print("Shitbag")
-
+    if(event.keyval == 65293):
+       messages.send_message(contacts.Selected,"lan",None,sb.get_text()) 
+       sb.set_text("")
 
 def test(blah):
     print("Test")
@@ -81,7 +82,6 @@ handlers = {
     "onDeleteWindow": Gtk.main_quit,
     "nick_change": nick_changed,
     "tvs_changed": tvs_changed,
-    "sendmsg":  sendmsg,
     "kpress": msgbox_keypress,
     "bollicks": test
 }

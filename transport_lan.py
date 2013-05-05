@@ -55,6 +55,8 @@ class lancontact():
         self.b_created = time.time()
         self.autodel = True
         self.maincontact = -1
+        self.undel_msgs = {}
+        self.unsent_msgs = {}
         
     def update_maincontact(self):
         #Create if not present
