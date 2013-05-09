@@ -2,7 +2,14 @@ from gi.repository import Gtk
 from random import randint
 gui_contactlist = Gtk.ListStore(str,int)
 Contactlist = {}
-Selected = 0
+
+Selected = -1
+
+
+
+#Gui items
+Selbox = None
+Sel_lbl = None
 
 def nfid():
     if len(Contactlist) == 0: return 0
@@ -18,6 +25,18 @@ def nfid():
 #
 #
 
+class Message_in:
+    def __init__(self,mc,contents,transport):
+        self.time_received = 0
+        self.time_sent = 0
+        self.timeout = 0
+        self.mc = None
+        self.transport = ""
+        self.security = 0
+        self.contents = 0
+        self.multipart = ()
+        self.seqid = 0
+        
 class Contact:
     def __init__(self):
         self.nick = ""
@@ -26,11 +45,17 @@ class Contact:
         self.autodel = True     
         self.nfid = nfid()
         Contactlist[self.nfid] = self
-            
+
+        #self.Messages_incoming = {}
+        #self.Messages_outgoing = {}
     def __del__(self):
+        global Selected
         print("Delself")
         gui_contactlist.remove(self.list_it)
-
+        if(self.nfid == Selected):
+            Sel_lbl.set_text("No recipient selected")
+            Selected = -1
+            
     def add_transport(self,transport,key):
         self.Transports[transport] = key
         

@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from gi.repository import Gtk
+from gi.repository import Gtk,Pango
 import gi._gobject
 
 import contacts
@@ -21,6 +21,11 @@ import transport_lan
 ##import transport_torchat
 
 #GUI handlers
+
+def Kwitt(blah,larg):
+    print("Kwitting!")
+    transport_lan.bcast_running = False
+    Gtk.main_quit()
  
 def nick_changed(entry):
     contacts.Myself.nick = Yourname_box.get_text()
@@ -32,7 +37,7 @@ def tvs_changed(blah):
         tree_iter = m.get_iter(path)
         value = m.get_value(tree_iter,1)
         contacts.Selected = value
-        print(contacts.Selected)
+        sendinfo.set_text("Destination: " + contacts.Contactlist[value].nick)
 
 def sendmsg(blah):
     messages.send_message(contacts.Selected,"lan",None,sb.get_text())
@@ -42,9 +47,6 @@ def msgbox_keypress(widge,event):
        messages.send_message(contacts.Selected,"lan",None,sb.get_text()) 
        sb.set_text("")
 
-def test(blah):
-    print("Test")
-
 #End GUI handlers
     
 builder = Gtk.Builder()
@@ -53,13 +55,18 @@ window = builder.get_object("window1")
 entry = builder.get_object("entry1")
 tv = builder.get_object("contacts_tree")
 sb = builder.get_object("sendbox")
+sendinfo = builder.get_object("sendinfo")
+
 sel = tv.get_selection()
 gi._gobject.threads_init()
 
 mview = builder.get_object("msgview")
 messages.tb = mview
+contacts.Sel_lbl = sendinfo
 #baffy = Gtk.TextBuffer()
 mview.set_buffer(messages.buffy)
+
+
 
 
 #messages.blah()
@@ -79,11 +86,10 @@ tv.set_model(contacts.gui_contactlist)
 window.show_all()
 
 handlers = {
-    "onDeleteWindow": Gtk.main_quit,
+    "onDeleteWindow": Kwitt,
     "nick_change": nick_changed,
     "tvs_changed": tvs_changed,
     "kpress": msgbox_keypress,
-    "bollicks": test
 }
 builder.connect_signals(handlers)
 

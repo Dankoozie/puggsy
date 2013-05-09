@@ -55,8 +55,7 @@ class lancontact():
         self.b_created = time.time()
         self.autodel = True
         self.maincontact = -1
-        self.undel_msgs = {}
-        self.unsent_msgs = {}
+
         
     def update_maincontact(self):
         #Create if not present
@@ -110,8 +109,15 @@ def process_unsecuredmsg(addr,packet):
     peer = peer_by_uid(packet[1:25])
     print("Unsec msg incoming")
     if(lan_contacts[peer].b_uid == packet[1:25]):
-        mc = lan_contacts[peer].maincontact
-        messages.process_message(mc,"lan","None",packet[25:])
+
+        #Attributes of received message
+        Msg = contacts.Message_in(lan_contacts[peer].maincontact,packet[27:],"lan")
+        Msg.time_received = time.time()
+        Msg.timeout = 255
+        Msg.security = 0
+        Msg.seqid = struct.unpack("H",packet[25:27])
+        
+        messages.process_message(Msg)
         
 
 def process_received(addr, packet):
@@ -119,6 +125,12 @@ def process_received(addr, packet):
     #print("Packet received")
     if(packet[0] == 66): process_broadcast(addr,packet)
     if(packet[0] == 85): process_unsecuredmsg(addr,packet)                  
+    if(packet[0] == 89):
+        print("Peer signing off")
+    if(packet[0] == 65):
+        print("Acknowledged: ")
+        
+
     
 def bcast():
     checktimeouts()
@@ -128,15 +140,22 @@ def bcast():
     if(bcast_running): threading.Timer(bcast_time,bcast).start()
     
 
-def send_unsecuredmsg(lc,msg):
-    hdr = struct.pack("B",85) + lan_uid + bytes(msg,'UTF-8')
+def send_unsecuredmsg(lc,seq,msg):
+    hdr = struct.pack("B",85) + lan_uid + struct.pack("H",seq) + bytes(msg,'UTF-8')
     if(lan_contacts[lc]):
             print("Sending unsec msg \n Addr:" + lan_contacts[lc].b_addr +"\n Port:" + str(lan_contacts[lc].b_port))
             sock.sendto(hdr,(lan_contacts[lc].b_addr,lan_contacts[lc].b_port))
 
+
+def send_ack(lc,seq):
+    hdr = struct.pack("B",65) + lan_uid + struct.pack("H",seq)
+    if(lan_contacts[lc]):
+        print("Sending ACK for message")
+        sock.sendto(hdr,(lan_contacts[lc].b_addr,lan_contacts[lc].b_port))
+
 def sendmsg(mc,msg):
     lc = mc.Transports['lan']
-    send_unsecuredmsg(lc,msg)
+    send_unsecuredmsg(lc,0,msg)
 
 def checktimeouts():
     tdel = []

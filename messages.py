@@ -4,17 +4,20 @@ import transport_lan
 
 tb = None
 
+Inbox = {}
+Pending = {}
+Sentbox = {}
+Archived = {}
 
 buffy = Gtk.TextBuffer()
 
-#def blah():
-#    enditer = buffy.get_end_iter()
- #   buffy.insert(enditer,"Gbshite")
+def process_ack(maincontact,transport,seqid):
+    pass
 
-def process_message(maincontact,transport,sec,body):
+def process_message(Msg_obj):
     print("Unsecured msg received")
     enditer = buffy.get_end_iter()
-    tx = "Message from: " + contacts.Contactlist[maincontact].nick + " Transport: " + transport + "\n" + str(body,'UTF-8') + "\n\n"
+    tx = "Message from: " + contacts.Contactlist[Msg_obj.mc].nick + " Transport: " + Msg_obj.transport + "\n" + str(Msg_obj.contents,'UTF-8') + "\n\n"
     print(tx)
     buffy.insert(enditer,tx)
     tb.scroll_to_mark(buffy.get_insert(),0,False,0.5,0.5)
