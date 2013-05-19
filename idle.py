@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 
 from gi.repository import Gtk,Pango
-import gi._gobject
+
+from gi.repository import GObject
 
 import contacts
 import messages
@@ -58,7 +59,7 @@ sb = builder.get_object("sendbox")
 sendinfo = builder.get_object("sendinfo")
 
 sel = tv.get_selection()
-gi._gobject.threads_init()
+GObject.threads_init()
 
 mview = builder.get_object("msgview")
 messages.tb = mview

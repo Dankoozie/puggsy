@@ -101,8 +101,8 @@ def process_broadcast(addr,packet):
         lan_contacts[existing_peer].b_nick = nick
         lan_contacts[existing_peer].b_addr = address
         lan_contacts[existing_peer].b_port = port
-        lan_contacts[existing_peer].update_maincontact()
         lan_contacts[existing_peer].b_lastrcvd = time.time()
+        lan_contacts[existing_peer].update_maincontact()
         print("Existing contact found")
     
 def process_unsecuredmsg(addr,packet):

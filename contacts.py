@@ -1,4 +1,6 @@
 from gi.repository import Gtk
+from gi.repository import GLib
+
 from random import randint
 gui_contactlist = Gtk.ListStore(str,int)
 Contactlist = {}
@@ -30,10 +32,10 @@ class Message_in:
         self.time_received = 0
         self.time_sent = 0
         self.timeout = 0
-        self.mc = None
-        self.transport = ""
+        self.mc = mc
+        self.transport = transport
         self.security = 0
-        self.contents = 0
+        self.contents = contents
         self.multipart = ()
         self.seqid = 0
         
@@ -48,6 +50,12 @@ class Contact:
 
         #self.Messages_incoming = {}
         #self.Messages_outgoing = {}
+
+    def ui_nick(self):
+        if(self.list_it): gui_contactlist[self.list_it] = [self.nick, self.nfid]
+        else: self.list_it = gui_contactlist.append([self.nick,self.nfid])
+        return False
+        
     def __del__(self):
         global Selected
         print("Delself")
@@ -65,8 +73,7 @@ class Contact:
 
     def set_nick(self,nickname):
         self.nick = nickname
-        if(self.list_it): gui_contactlist[self.list_it] = [nickname, self.nfid]
-        else: self.list_it = gui_contactlist.append([nickname,self.nfid])
+        GLib.idle_add(self.ui_nick)
 
 class Self_contact:
     def __init__(self,nickname):
