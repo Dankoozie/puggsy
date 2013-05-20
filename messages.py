@@ -1,15 +1,26 @@
 from gi.repository import Gtk
 import contacts
 import transport_lan
+import notification
+
+from random import randint
 
 tb = None
 
 Inbox = {}
-Pending = {}
+Pending = [] #Contacts with pending messages
 Sentbox = {}
 Archived = {}
 
 buffy = Gtk.TextBuffer()
+
+def gen_seqid(mc):
+    sp = contacts.Contactlist[mc].Messages_pending
+    for i in range(0,65535):
+        if(not (i in sp)): return i
+
+def send_ack(Msg_obj):
+    transport_lan.send_ack(Msg_obj.mc,Msg_obj.seqid)
 
 def process_ack(maincontact,transport,seqid):
     pass
@@ -21,7 +32,13 @@ def process_message(Msg_obj):
     print(tx)
     buffy.insert(enditer,tx)
     tb.scroll_to_mark(buffy.get_insert(),0,False,0.5,0.5)
+
+    #Send receipt
+    send_ack(Msg_obj)
     
 def send_message(maincontact,transport,sec,body):
     if not (maincontact in contacts.Contactlist): return False
-    transport_lan.sendmsg(contacts.Contactlist[maincontact],body)
+    seqid = gen_seqid(maincontact)
+    contacts.Contactlist[maincontact].Messages_pending[seqid] = body
+    transport_lan.sendmsg(contacts.Contactlist[maincontact],body,seqid)
+    

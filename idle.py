@@ -2,6 +2,7 @@
 
 from gi.repository import Gtk,Pango
 from gi.repository import GObject
+GObject.threads_init()
 
 import contacts
 import messages
@@ -9,10 +10,9 @@ import messages
 import transport_lan
 #import transport_serial
 #import transport_bluetooth
-#import transport_udp_direct
+import transport_udp4_direct
 #import transport_tcp_direct
 #import transport_udp_storeforward
-
 #import transport_http_storeforward
 ##import transport_nfc
 ##import transport_ar
@@ -60,7 +60,6 @@ collem = Gtk.TreeViewColumn('Contacts')
 Yourname_box = builder.get_object("yourname")
 
 sel = tv.get_selection()
-GObject.threads_init()
 
 mview = builder.get_object("msgview")
 mview.set_buffer(messages.buffy)
@@ -69,7 +68,11 @@ messages.tb = mview
 
 
 #GUI items for module 'contacts'
+contacts.Builder = builder
 contacts.Sel_lbl = sendinfo
+contacts.Selbox = tv
+
+
 
 #Settings objects
 
@@ -90,6 +93,8 @@ handlers = {
     "nick_change": nick_changed,
     "on_treeview-selection_changed": tvs_changed,
     "kpress": msgbox_keypress,
+    "contact_showdetails": contacts.gui_showdetails,
+    "wcd_close": contacts.wcd_close
 }
 builder.connect_signals(handlers)
 
