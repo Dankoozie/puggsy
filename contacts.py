@@ -1,9 +1,13 @@
 from gi.repository import Gtk
 from gi.repository import GLib
-
 from random import randint
+from socket import gethostname
+
 gui_contactlist = Gtk.ListStore(str,int)
+
+
 Contactlist = {}
+
 
 Selected = -1
 
@@ -12,6 +16,7 @@ Selected = -1
 #Gui items
 Selbox = None
 Sel_lbl = None
+Nick_box = None
 
 def nfid():
     if len(Contactlist) == 0: return 0
@@ -21,11 +26,10 @@ def nfid():
         else:
                 return i
 
-# Contact class
-# autodel
-#
-#
-#
+def ui_remove(list_it):
+    gui_contactlist.remove(list_it)
+
+
 
 class Message_in:
     def __init__(self,mc,contents,transport):
@@ -55,13 +59,19 @@ class Contact:
         if(self.list_it): gui_contactlist[self.list_it] = [self.nick, self.nfid]
         else: self.list_it = gui_contactlist.append([self.nick,self.nfid])
         return False
+
+    def ui_removeself(self):
+        gui_contactlist.remove(self.list_it)
+        return False
         
     def __del__(self):
         global Selected
         print("Delself")
-        gui_contactlist.remove(self.list_it)
+        GLib.idle_add(ui_remove,self.list_it)
+        
         if(self.nfid == Selected):
             Sel_lbl.set_text("No recipient selected")
+            print("GAh")
             Selected = -1
             
     def add_transport(self,transport,key):
@@ -78,5 +88,7 @@ class Contact:
 class Self_contact:
     def __init__(self,nickname):
         self.nick = nickname
+        #Nick_box.set_text(nickname)
         
-Myself = Self_contact("Gorbitchoff")
+
+Myself = Self_contact(gethostname())

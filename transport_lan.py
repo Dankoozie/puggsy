@@ -12,9 +12,10 @@ lsock = socket(AF_INET6, SOCK_DGRAM)
 bcast_addr = "ff02::1"
 bcast_port = 49091
 listen_port = 49091
-bcast_time = 1
+bcast_time = 15
 bcast_remove_factor = 3.1
 bcast_running = True
+listen_running = True
 sock.bind(('',listen_port))
 
 def gen_lan_uid():
@@ -93,9 +94,10 @@ def process_broadcast(addr,packet):
 
     print("Incoming broadcast\n Nick:" + str(nick,'UTF-8') + "\nUID: " + str(binascii.hexlify(uid),'utf-8'))
     if not peer_exists(uid):
-       print("New contact discovered")
+       #print("New contact discovered")
        Contactobject = lancontact(nick,address,port,uid)
        Contactobject.addself()
+       bcast_nothread() # Notify new peer that you are around
     else:
         existing_peer = peer_by_uid(uid)
         lan_contacts[existing_peer].b_nick = nick
@@ -103,7 +105,7 @@ def process_broadcast(addr,packet):
         lan_contacts[existing_peer].b_port = port
         lan_contacts[existing_peer].b_lastrcvd = time.time()
         lan_contacts[existing_peer].update_maincontact()
-        print("Existing contact found")
+        #print("Existing contact found")
     
 def process_unsecuredmsg(addr,packet):
     peer = peer_by_uid(packet[1:25])
@@ -126,18 +128,30 @@ def process_received(addr, packet):
     if(packet[0] == 66): process_broadcast(addr,packet)
     if(packet[0] == 85): process_unsecuredmsg(addr,packet)                  
     if(packet[0] == 89):
+        lan_id = packet[1:25]
+        peer = peer_by_uid(lan_id)
+        if(peer and (lan_contacts[peer].nfid != lan_uid)):
+            #Possible 'peer = 0 problem'
+            print("Peer found - " + str(peer))
+            del(lan_contacts[peer])
         print("Peer signing off")
+        
     if(packet[0] == 65):
         print("Acknowledged: ")
         
 
     
+
+def bcast_nothread():
+        hdr = struct.pack("BB",66,bcast_time)
+        sock.sendto(hdr + lan_uid + bytes(contacts.Myself.nick,'UTF-8'),(bcast_addr,bcast_port))    
+
 def bcast():
-    checktimeouts()
-   # print("BCasting")
-    hdr = struct.pack("BB",66,bcast_time)
-    sock.sendto(hdr + lan_uid + bytes(contacts.Myself.nick,'UTF-8'),(bcast_addr,bcast_port))
-    if(bcast_running): threading.Timer(bcast_time,bcast).start()
+    if(bcast_running):
+        checktimeouts()
+        hdr = struct.pack("BB",66,bcast_time)
+        sock.sendto(hdr + lan_uid + bytes(contacts.Myself.nick,'UTF-8'),(bcast_addr,bcast_port))
+        threading.Timer(bcast_time,bcast).start()
     
 
 def send_unsecuredmsg(lc,seq,msg):
@@ -163,15 +177,23 @@ def checktimeouts():
         if((time.time() - lan_contacts[lc].b_lastrcvd) > (bcast_time * bcast_remove_factor)):
             tdel.append(lc)
     for lc in tdel: del(lan_contacts[lc])
+
+
+def Shutdown():
+    global bcast_running,listen_running
+    bcast_running = False
+    listen_running = False
+    sock.sendto(struct.pack("B",89) + lan_uid,(bcast_addr,bcast_port))
+
     
 class listen(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self.recvd = 0
     def run(self):
-        while True:
-           data, addr = sock.recvfrom(1024)
-           process_received(addr, data)
+        while listen_running:
+            data, addr = sock.recvfrom(1024)
+            process_received(addr, data)
 bcast()
 listener = listen()
 listener.start()

@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 from gi.repository import Gtk,Pango
-
 from gi.repository import GObject
 
 import contacts
@@ -25,7 +24,7 @@ import transport_lan
 
 def Kwitt(blah,larg):
     print("Kwitting!")
-    transport_lan.bcast_running = False
+    transport_lan.Shutdown()
     Gtk.main_quit()
  
 def nick_changed(entry):
@@ -57,25 +56,25 @@ entry = builder.get_object("entry1")
 tv = builder.get_object("contacts_tree")
 sb = builder.get_object("sendbox")
 sendinfo = builder.get_object("sendinfo")
+collem = Gtk.TreeViewColumn('Contacts')
+Yourname_box = builder.get_object("yourname")
 
 sel = tv.get_selection()
 GObject.threads_init()
 
 mview = builder.get_object("msgview")
-messages.tb = mview
-contacts.Sel_lbl = sendinfo
-#baffy = Gtk.TextBuffer()
 mview.set_buffer(messages.buffy)
 
+messages.tb = mview
 
 
-
-#messages.blah()
+#GUI items for module 'contacts'
+contacts.Sel_lbl = sendinfo
 
 #Settings objects
-Yourname_box = builder.get_object("yourname")
 
-collem = Gtk.TreeViewColumn('Contacts')
+Yourname_box.set_text(contacts.Myself.nick)
+
 tv.append_column(collem)
 cell = Gtk.CellRendererText()
 
@@ -89,7 +88,7 @@ window.show_all()
 handlers = {
     "onDeleteWindow": Kwitt,
     "nick_change": nick_changed,
-    "tvs_changed": tvs_changed,
+    "on_treeview-selection_changed": tvs_changed,
     "kpress": msgbox_keypress,
 }
 builder.connect_signals(handlers)
