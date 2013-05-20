@@ -4,7 +4,7 @@ import contacts, struct, time, random
 import messages
 
 sock = socket(AF_INET, SOCK_DGRAM)
-sock.bind(('192.168.1.1',49092))
+sock.bind(('',49092))
 
 listen_running = True
 
