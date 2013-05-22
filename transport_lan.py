@@ -191,6 +191,7 @@ def Shutdown():
     global bcast_running,listen_running
     bcast_running = False
     listen_running = False
+    #Tell other clients you are going offline
     sock.sendto(struct.pack("B",89) + lan_uid,(bcast_addr,bcast_port))
 
     

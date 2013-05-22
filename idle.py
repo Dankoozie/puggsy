@@ -72,7 +72,8 @@ contacts.Builder = builder
 contacts.Sel_lbl = sendinfo
 contacts.Selbox = tv
 
-
+#GUI items for module 'messages'
+messages.Mainwindow = window
 
 #Settings objects
 

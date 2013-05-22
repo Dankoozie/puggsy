@@ -6,6 +6,7 @@ import notification
 from random import randint
 
 tb = None
+Mainwindow = None
 
 Inbox = {}
 Pending = [] #Contacts with pending messages
@@ -35,6 +36,10 @@ def process_message(Msg_obj):
 
     #Send receipt
     send_ack(Msg_obj)
+
+    #Notify
+    notification.sys_beep()
+    #Mainwindow.set_urgency_hint(True)
     
 def send_message(maincontact,transport,sec,body):
     if not (maincontact in contacts.Contactlist): return False
