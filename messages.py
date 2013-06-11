@@ -24,7 +24,11 @@ def send_ack(Msg_obj):
     transport_lan.send_ack(Msg_obj.mc,Msg_obj.seqid)
 
 def process_ack(maincontact,transport,seqid):
-    pass
+    mc = contacts.Contactlist[maincontact]
+    if(seqid in mc.Messages_pending):
+        del(mc.Messages_pending[seqid])
+        print("Message sequence " + str(seqid) + " delivered")
+    else: print("[BOGUS]: Message identifier invalid")
 
 def process_message(Msg_obj):
     print("Unsecured msg received")

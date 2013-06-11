@@ -88,6 +88,9 @@ def process_broadcast(addr,packet):
     address = addr[0]
     port = addr[1]
 
+    peer = peer_by_uid(uid)
+
+    
     curcontact = (nick,address,port,uid)
 
     #Ignore packets from self 
@@ -111,8 +114,7 @@ def process_broadcast(addr,packet):
 def process_unsecuredmsg(addr,packet):
     peer = peer_by_uid(packet[1:25])
     print("Unsec msg incoming")
-    if(lan_contacts[peer].b_uid == packet[1:25]):
-
+    if(peer in lan_contacts):
         #Attributes of received message
         Msg = contacts.Message_in(lan_contacts[peer].maincontact,packet[27:],"lan")
         Msg.time_received = time.time()
@@ -121,21 +123,37 @@ def process_unsecuredmsg(addr,packet):
         Msg.seqid = struct.unpack("H",packet[25:27])[0]
         
         messages.process_message(Msg)
-    else: print("[BOGUS]: Message received from unknown peer")    
+    else: print("[BOGUS]: Message received from unknown peer")
+
+#Process 'sign off' packet
+def process_signoff(addr,packet):
+    lan_id = packet[1:25]
+    peer = peer_by_uid(lan_id)
+    if(peer in lan_contacts):
+        #Possible 'peer = 0 problem'
+        print("Peer found - " + str(peer))
+        del(lan_contacts[peer])
+        print("Peer signing off")
+
+def process_info(addr,packet):
+    return True
+
+def process_securedmsg(addr,packet):
+    return True
+    
 #Handles incoming UDP packet
 def process_received(addr, packet):
-    if(packet[0] == 66): process_broadcast(addr,packet)
-    if(packet[0] == 85): process_unsecuredmsg(addr,packet)                  
-    if(packet[0] == 89):
-        lan_id = packet[1:25]
-        peer = peer_by_uid(lan_id)
-        if(peer and (lan_contacts[peer].nfid != lan_uid)):
-            #Possible 'peer = 0 problem'
-            print("Peer found - " + str(peer))
-            del(lan_contacts[peer])
-        print("Peer signing off")
-        
-    if(packet[0] == 65): process_ack(addr,packet)
+    pack_switch = {65:process_ack,
+                   66:process_broadcast,
+                   73:process_info,
+                   83:process_securedmsg,
+                   85:process_unsecuredmsg,
+                   89:process_signoff}
+
+    try:
+        pack_switch[int(packet[0])](addr,packet)
+    except KeyError:
+        print("[BOGUS]: Invalid start byte " + str(int(packet[0])))
 
 #Process incoming delivery receipt        
 def process_ack(addr,packet):
@@ -143,12 +161,9 @@ def process_ack(addr,packet):
     lan_id = packet[1:25]
     peer = peer_by_uid(lan_id)
     if(peer != -1):
-        mc = contacts.Contactlist[lan_contacts[peer].maincontact]
-        if(seqid in mc.Messages_pending):
-            del(mc.Messages_pending[seqid])
-            print("Message sequence " + str(seqid) + " delivered")
-        else: print("[BOGUS]: Message identifier invalid")
-    else: print("[BOGUS]: Delivery report (peer does not exist)")         
+        messages.process_ack(lan_contacts[peer].maincontact,"lan",seqid)
+    else: print("[BOGUS]: Delivery report (peer does not exist)")
+    
 #Send single presence broadcast (for use when one is received)
 def bcast_send():
         hdr = struct.pack("BB",66,bcast_time)

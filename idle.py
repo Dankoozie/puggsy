@@ -7,6 +7,8 @@ GObject.threads_init()
 import contacts
 import messages
 
+import fivebit
+
 import transport_lan
 #import transport_serial
 #import transport_bluetooth
@@ -46,6 +48,8 @@ def msgbox_keypress(widge,event):
     if(event.keyval == 65293):
        messages.send_message(contacts.Selected,"lan",None,sb.get_text()) 
        sb.set_text("")
+    #else:
+       # print(len(fivebit.encode3(sb.get_text())),len(zlib.compress(bytes(sb.get_text(),'UTF-8'),9)),len(sb.get_text())) 
 
 #End GUI handlers
     
