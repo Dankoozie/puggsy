@@ -72,7 +72,13 @@ class Contact:
         self.Transports = {}
         self.autodel = True     
         self.nfid = nfid()
+
         Contactlist[self.nfid] = self
+
+        #Security attributes
+                        #in_file,in_offset,out_file,out_offset
+        self.otp_info = ["",0,"",0]
+        self.enc_key = ""
 
         #self.Messages_incoming = {}
         #self.Messages_outgoing = {}
