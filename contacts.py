@@ -77,6 +77,7 @@ class Contact:
 
         #Security attributes
                         #in_file,in_offset,out_file,out_offset
+        self.level = 5
         self.otp_info = ["",0,"",0]
         self.enc_key = ""
 

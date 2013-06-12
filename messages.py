@@ -2,6 +2,7 @@ from gi.repository import Gtk
 import contacts
 import transport_lan
 import notification
+import fivebit
 
 from random import randint
 
