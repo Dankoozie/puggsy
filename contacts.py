@@ -4,7 +4,8 @@ from gi.repository import GLib
 from random import randint
 from socket import gethostname
 
-gui_contactlist = Gtk.ListStore(str,int)
+gui_contactlist = Gtk.ListStore(int,str,GdkPixbuf.Pixbuf)
+tp_l = Gtk.ListStore(str,int)
 
 Contactlist = {}
 Selected = -1
@@ -15,7 +16,10 @@ Sel_lbl = None
 Nick_box = None
 Builder = None
 
-
+pixbuf_grn = GdkPixbuf.Pixbuf.new_from_file_at_size("./graphics/grn.png",16,16)
+pixbuf_red = GdkPixbuf.Pixbuf.new_from_file_at_size("./graphics/red.png",16,16)
+pixbuf_orn = GdkPixbuf.Pixbuf.new_from_file_at_size("./graphics/orn.png",16,16)
+    
 def wcd_close(w,e):
     w.hide()
     return True
@@ -35,6 +39,11 @@ def gui_showdetails(Treeview,path,view_column):
     Nick_lbl.set_text(Contactlist[gv].nick)
     Detailwindow.show_all()
 
+    #Transports treeview
+    tp_l.clear()
+    for a in Contactlist[gv].Transports:
+        tp_l.append([a+ "\nbollox",Contactlist[gv].Transports[a]])
+    
 def nfid():
     if len(Contactlist) == 0: return 0
     for i in range(max(Contactlist) + 2):
@@ -70,15 +79,14 @@ class Contact:
         self.nick = ""
         self.list_it = None
         self.Transports = {}
+        self.Transport_info_string = {}
         self.autodel = True     
         self.nfid = nfid()
 
         Contactlist[self.nfid] = self
 
-        #Security attributes
-                        #in_file,in_offset,out_file,out_offset
         self.level = 5
-        self.otp_info = ["",0,"",0]
+        self.otp_id = -1
         self.enc_key = ""
 
         #self.Messages_incoming = {}
@@ -87,8 +95,8 @@ class Contact:
         self.Messages_pending = {}
         
     def ui_nick(self):
-        if(self.list_it): gui_contactlist[self.list_it] = [self.nick, self.nfid]
-        else: self.list_it = gui_contactlist.append([self.nick,self.nfid])
+        if(self.list_it): gui_contactlist[self.list_it] = [self.nfid,self.nick,pixbuf_grn]
+        else: self.list_it = gui_contactlist.append([self.nfid,self.nick,pixbuf_grn])
         return False
 
     #def ui_removeself(self):
