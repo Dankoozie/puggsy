@@ -1,6 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <!-- interface-requires gtk+ 3.0 -->
+  <object class="GtkAboutDialog" id="aboutdialog">
+    <property name="can_focus">False</property>
+    <property name="border_width">5</property>
+    <property name="type_hint">dialog</property>
+    <property name="program_name">Puggsy Messenger</property>
+    <property name="version">0.0 build 0</property>
+    <property name="website">https://freecode.com/projects/puggsy-messenger</property>
+    <property name="website_label" translatable="yes">Visit project page on freecode.com</property>
+    <property name="license" translatable="yes">GPLv2</property>
+    <property name="authors">Dankoozie</property>
+    <property name="license_type">gpl-2-0</property>
+    <child internal-child="vbox">
+      <object class="GtkBox" id="aboutdialog-vbox1">
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">2</property>
+        <child internal-child="action_area">
+          <object class="GtkButtonBox" id="aboutdialog-action_area1">
+            <property name="can_focus">False</property>
+            <property name="layout_style">end</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+      </object>
+    </child>
+  </object>
   <object class="GtkListStore" id="liststore1"/>
   <object class="GtkListStore" id="liststore2"/>
   <object class="GtkMenu" id="menu1">
@@ -169,6 +203,8 @@
                   <object class="GtkMenu" id="menu7">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <signal name="selection-done" handler="menu_about" swapped="no"/>
+                    <signal name="selection-get" handler="menu_about" swapped="no"/>
                     <child>
                       <object class="GtkImageMenuItem" id="imagemenuitem20">
                         <property name="label">gtk-about</property>
@@ -528,6 +564,7 @@
             </child>
             <child>
               <object class="GtkBox" id="box7">
+                <property name="width_request">90</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="orientation">vertical</property>
@@ -535,6 +572,7 @@
                   <object class="GtkComboBox" id="presence_combo">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <signal name="changed" handler="presence_changed" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -549,7 +587,7 @@
                     <property name="shadow_type">in</property>
                     <child>
                       <object class="GtkTreeView" id="contacts_tree">
-                        <property name="width_request">300</property>
+                        <property name="width_request">310</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="halign">end</property>
@@ -657,10 +695,28 @@
               </packing>
             </child>
             <child>
-              <placeholder/>
+              <object class="GtkLabel" id="wcd_presence_status">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Status: </property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
             </child>
             <child>
-              <placeholder/>
+              <object class="GtkLabel" id="wcd_lastseen">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Last active: </property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">2</property>
+              </packing>
             </child>
             <child>
               <placeholder/>
