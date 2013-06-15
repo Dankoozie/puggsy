@@ -1,7 +1,6 @@
 from gi.repository import Gtk
 from gi.repository import GdkPixbuf
 from gi.repository import GLib
-from socket import gethostname
 
 gui_contactlist = Gtk.ListStore(int,str,GdkPixbuf.Pixbuf)
 tp_l = Gtk.ListStore(str,int)
@@ -129,11 +128,3 @@ class Contact:
     #   del self.Transports[transport]
     #  if(self.autodel and (not self.Transports)): del(self)
 
-class Self_contact:
-    def __init__(self,nickname):
-        self.nick = nickname
-        self.presence = 0
-        #Nick_box.set_text(nickname)
-        
-
-Myself = Self_contact(gethostname())

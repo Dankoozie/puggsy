@@ -1,8 +1,10 @@
 from socket import *
 import threading
-import contacts, struct, time, random
+import contacts, struct, time
 import binascii
 import messages
+
+from myself import Myself
 
 transport_trusted = True
 
@@ -19,14 +21,8 @@ bcast_running = True
 listen_running = True
 sock.bind(('',listen_port))
 
-def gen_lan_uid():
-    g = b''
-    for i in range(24):
-        g = g + bytes([random.randint(0,255)])
-    return g
-
-lan_uid = gen_lan_uid()
-
+lan_uid = Myself.l_uid
+Myself.Transports['lan'] = lan_uid
 
 def nfid_lan():
     if len(lan_contacts) == 0: return 0
@@ -142,9 +138,15 @@ def process_signoff(addr,packet):
     peer = peer_by_uid(lan_id)
     if(peer in lan_contacts):
         #Possible 'peer = 0 problem'
-        print("Peer found - " + str(peer))
         del(lan_contacts[peer])
         print("Peer signing off")
+
+
+def process_transport_list(addr,packet):
+    peer = peer_by_uid(packet[1:25])
+    if(peer in lan_contacts):
+        print(packet[25:])
+
 
 def process_info(addr,packet):
     return True
@@ -158,6 +160,7 @@ def process_received(addr, packet):
                    66:process_broadcast,
                    73:process_info,
                    83:process_securedmsg,
+                   84:process_transport_list,
                    85:process_unsecuredmsg,
                    89:process_signoff}
 
@@ -177,9 +180,9 @@ def process_ack(addr,packet):
     
 #Send single presence broadcast (for use when one is received)
 def bcast_send():
-        print("My status: ", contacts.Myself.presence)
-        hdr = struct.pack("BBB",66,bcast_time,contacts.Myself.presence)
-        sock.sendto(hdr + lan_uid + bytes(contacts.Myself.nick,'UTF-8'),(bcast_addr,bcast_port))    
+        print("My status: ", Myself.presence)
+        hdr = struct.pack("BBB",66,bcast_time,Myself.presence)
+        sock.sendto(hdr + lan_uid + bytes(Myself.nick,'UTF-8'),(bcast_addr,bcast_port))    
 
 def bcast():
     if(bcast_running):

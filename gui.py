@@ -5,6 +5,7 @@ from gi.repository import GObject
 from gi.repository import GdkPixbuf
 GObject.threads_init()
 
+from myself import Myself,save
 import contacts
 import messages
 
@@ -25,11 +26,12 @@ import transport_udp4_direct
 
 def Kwitt(blah,larg):
     print("Kwitting!")
+    save()
     transport_lan.Shutdown()
     Gtk.main_quit()
  
 def nick_changed(entry):
-    contacts.Myself.nick = Yourname_box.get_text()
+    Myself.nick = Yourname_box.get_text()
 
 
 def set_transports_combo():
@@ -95,6 +97,7 @@ tpl_pcell = Gtk.CellRendererPixbuf()
 
 transport_select.pack_start(tpl_cell,True)
 transport_select.pack_start(tpl_pcell,False)
+
 transport_select.add_attribute(tpl_cell,'text',0)
 transport_select.add_attribute(tpl_pcell,'pixbuf',1)
 
@@ -123,8 +126,8 @@ prc_combo.set_model(prc_list)
 prc_cell = Gtk.CellRendererText()
 prc_pcell = Gtk.CellRendererPixbuf()
 
-prc_combo.pack_start(prc_cell,True)
 prc_combo.pack_start(prc_pcell,False)
+prc_combo.pack_start(prc_cell,True)
 prc_combo.add_attribute(prc_cell,'text',1)
 prc_combo.add_attribute(prc_pcell,'pixbuf',2)
 
@@ -136,12 +139,12 @@ prc_combo.set_active(0)
 
 def presence_changed(bjk):
     if(prc_combo.get_active() < 2):
-        contacts.Myself.presence = prc_combo.get_active()
+        Myself.presence = prc_combo.get_active()
     
 
 #Settings objects
 
-Yourname_box.set_text(contacts.Myself.nick)
+Yourname_box.set_text(Myself.nick)
 
 #Contacts list set-up
 collem = Gtk.TreeViewColumn('Contacts')
