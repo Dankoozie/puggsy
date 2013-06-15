@@ -4,6 +4,8 @@ import contacts, struct, time, random
 import binascii
 import messages
 
+transport_trusted = True
+
 lan_contacts = {}
 
 #Set up socket stuff
@@ -45,12 +47,13 @@ def peer_by_uid(uid):
     return -1
 
 class lancontact():
-    def __init__(self,nick,addr,port,uid):
+    def __init__(self,nick,addr,port,uid,status):
         self.nfid = None
         self.b_nick = nick
         self.b_addr = addr
         self.b_port = port
         self.b_uid = uid
+        self.b_status = status
         self.b_lastrcvd = time.time()
         self.b_created = time.time()
         self.autodel = True
@@ -63,7 +66,10 @@ class lancontact():
             mc = contacts.Contact()
             self.maincontact = mc.nfid
 
-        contacts.Contactlist[self.maincontact].set_nick(str(self.b_nick,'UTF-8'))
+        contacts.Contactlist[self.maincontact].nick = str(self.b_nick,'UTF-8')
+        contacts.Contactlist[self.maincontact].presence = self.b_status
+        contacts.Contactlist[self.maincontact].ui_update()
+        print("Status: ",self.b_status)
                    
     def addself(self):
         self.nfid = nfid_lan()
@@ -82,9 +88,13 @@ class lancontact():
 
 #Process LAN presence broadcast packet ('B<lan_uid><nickname>')    
 def process_broadcast(addr,packet):
-    uid = packet[2:26]
+    uid = packet[3:27]
     interval = packet[1]
-    nick = packet[26:]
+
+    #Status (lsb=presence)
+    status = int(packet[2])
+       
+    nick = packet[27:]
     address = addr[0]
     port = addr[1]
 
@@ -99,7 +109,7 @@ def process_broadcast(addr,packet):
     print("Incoming broadcast\n Nick:" + str(nick,'UTF-8') + "\nUID: " + str(binascii.hexlify(uid),'utf-8'))
     if not peer_exists(uid):
        #print("New contact discovered")
-       Contactobject = lancontact(nick,address,port,uid)
+       Contactobject = lancontact(nick,address,port,uid,status)
        Contactobject.addself()
        bcast_send() # Notify new peer that you are around
     else:
@@ -108,6 +118,7 @@ def process_broadcast(addr,packet):
         lan_contacts[existing_peer].b_addr = address
         lan_contacts[existing_peer].b_port = port
         lan_contacts[existing_peer].b_lastrcvd = time.time()
+        lan_contacts[existing_peer].b_status = status
         lan_contacts[existing_peer].update_maincontact()
 
 #Process Unsecured LAN message('M<sender lan_uid><message>')        
@@ -166,7 +177,8 @@ def process_ack(addr,packet):
     
 #Send single presence broadcast (for use when one is received)
 def bcast_send():
-        hdr = struct.pack("BB",66,bcast_time)
+        print("My status: ", contacts.Myself.presence)
+        hdr = struct.pack("BBB",66,bcast_time,contacts.Myself.presence)
         sock.sendto(hdr + lan_uid + bytes(contacts.Myself.nick,'UTF-8'),(bcast_addr,bcast_port))    
 
 def bcast():

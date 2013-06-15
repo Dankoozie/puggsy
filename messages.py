@@ -50,5 +50,9 @@ def send_message(maincontact,transport,sec,body):
     if not (maincontact in contacts.Contactlist): return False
     seqid = gen_seqid(maincontact)
     contacts.Contactlist[maincontact].Messages_pending[seqid] = body
-    transport_lan.sendmsg(contacts.Contactlist[maincontact],body,seqid)
-    
+    if(transport == "lan"):      
+        transport_lan.sendmsg(contacts.Contactlist[maincontact],body,seqid)
+    elif(transport == "udp4"):
+        transport_udp4_direct.sendmsg(contacts.Contactlist[maincontact],body,seqid)
+        
+        

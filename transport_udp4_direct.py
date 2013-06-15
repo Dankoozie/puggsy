@@ -4,12 +4,12 @@ import contacts, struct, time, random
 import messages
 
 sock = socket(AF_INET, SOCK_DGRAM)
-sock.bind(('',49092))
+sock.bind(('',15892))
 
 listen_running = True
 
 def process_received(addr,data):
-    print("Incoming!")
+    print("Incoming! ", addr, data)
 
 class listen(threading.Thread):
     def __init__(self):
