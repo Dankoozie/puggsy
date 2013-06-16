@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from gi.repository import Gtk,Pango
+from gi.repository import Gtk
 from gi.repository import GObject
 from gi.repository import GdkPixbuf
 GObject.threads_init()
@@ -42,8 +42,7 @@ def set_transports_combo():
     
     for a in contacts.Contactlist[contacts.Selected].Transports:
         transport_list.append([a,pixbuf_lan])
-        print(a)
-    transport_list.append(["UDP4",pixbuf_bt])
+
 def tvs_changed(blah):
     (m,p) = blah.get_selected_rows()
     #Multi select possible
@@ -178,6 +177,8 @@ handlers = {
     "presence_changed": presence_changed
 }
 builder.connect_signals(handlers)
+
+#messages.msg_to_box("boll",bytes("licks",'UTF-8'))
 
 Gtk.main()
 

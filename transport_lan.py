@@ -2,7 +2,7 @@ from socket import *
 import threading
 import contacts, struct, time
 import binascii
-import messages
+import messages,tp
 
 from myself import Myself
 
@@ -86,7 +86,6 @@ class lancontact():
 def process_broadcast(addr,packet):
     uid = packet[3:27]
     interval = packet[1]
-
     #Status (lsb=presence)
     status = int(packet[2])
        
@@ -146,7 +145,8 @@ def process_transport_list(addr,packet):
     peer = peer_by_uid(packet[1:25])
     if(peer in lan_contacts):
         print(packet[25:])
-
+        depickle = packet[25:]
+        
 
 def process_info(addr,packet):
     return True

@@ -1,8 +1,10 @@
-from gi.repository import Gtk
+from gi.repository import Gtk,Pango,GLib
 import contacts
 import transport_lan
 import notification
 import fivebit
+import time
+import tp
 
 from random import randint
 
@@ -15,6 +17,29 @@ Sentbox = {}
 Archived = {}
 
 buffy = Gtk.TextBuffer()
+tag_in1 = buffy.create_tag("in1",foreground="#989898",weight=400)
+tag_in2 = buffy.create_tag("in2",foreground="#900000",weight=600)
+tag_in3 = buffy.create_tag("in3",foreground="#900000",weight=400)
+tag_in4 = buffy.create_tag("in4",foreground="#000000",weight=400)
+
+tag_out1 = buffy.create_tag("out1",foreground="#2071ae",weight=600)
+tag_out2 = buffy.create_tag("out2",foreground="#2071ae",weight=400)
+
+def msg_out_box(dest,contents,transport):
+    enditer = buffy.get_end_iter()
+    buffy.insert_with_tags(enditer,time.strftime("[%H:%M:%S]"),tag_in1)
+    buffy.insert_with_tags(enditer," Recipient: " + dest,tag_out1)
+    buffy.insert_with_tags(enditer," (via " + tp.friendly[transport] +")\n",tag_out2)
+    buffy.insert_with_tags(enditer,contents + "\n\n",tag_in4)
+    tb.scroll_to_mark(buffy.get_insert(),0,False,0.5,0.5)
+
+def msg_to_box(nick,contents,transport):
+    enditer = buffy.get_end_iter()
+    buffy.insert_with_tags(enditer,time.strftime("[%H:%M:%S]"),tag_in1)
+    buffy.insert_with_tags(enditer," Sender: " + nick,tag_in2)
+    buffy.insert_with_tags(enditer," (via " + tp.friendly[transport] +")\n",tag_in3)
+    buffy.insert_with_tags(enditer,str(contents,'UTF-8') + "\n\n",tag_in4)
+    tb.scroll_to_mark(buffy.get_insert(),0,False,0.5,0.5)
 
 def gen_seqid(mc):
     sp = contacts.Contactlist[mc].Messages_pending
@@ -32,18 +57,14 @@ def process_ack(maincontact,transport,seqid):
     else: print("[BOGUS]: Message identifier invalid")
 
 def process_message(Msg_obj):
-    print("Unsecured msg received")
-    enditer = buffy.get_end_iter()
-    tx = "Message from: " + contacts.Contactlist[Msg_obj.mc].nick + " Transport: " + Msg_obj.transport + "\n" + str(Msg_obj.contents,'UTF-8') + "\n\n"
-    print(tx)
-    buffy.insert(enditer,tx)
-    tb.scroll_to_mark(buffy.get_insert(),0,False,0.5,0.5)
+    #tx = "Message from: " + contacts.Contactlist[Msg_obj.mc].nick + " Transport: " + Msg_obj.transport + "\n" + str(Msg_obj.contents,'UTF-8') + "\n\n"
 
+    GLib.idle_add(msg_to_box,contacts.Contactlist[Msg_obj.mc].nick,Msg_obj.contents,Msg_obj.transport)
     #Send receipt
     send_ack(Msg_obj)
 
     #Notify
-    notification.sys_beep()
+    #notification.sys_beep()
     #Mainwindow.set_urgency_hint(True)
     
 def send_message(maincontact,transport,sec,body):
@@ -54,5 +75,13 @@ def send_message(maincontact,transport,sec,body):
         transport_lan.sendmsg(contacts.Contactlist[maincontact],body,seqid)
     elif(transport == "udp4"):
         transport_udp4_direct.sendmsg(contacts.Contactlist[maincontact],body,seqid)
-        
+
+    msg_out_box(contacts.Contactlist[maincontact].nick,body,transport)
+    
+class Msg_in:
+    def __init__(self):
+        pass
+    
+
+
         

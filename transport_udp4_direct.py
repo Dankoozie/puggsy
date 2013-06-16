@@ -3,11 +3,13 @@ import threading
 import contacts, struct, time, random
 import messages
 
+
+
 from myself import Myself
 
 transport_trusted = False
 
-Myself.transports['udp4':('86.43.88.90',15892)]
+Myself.Transports['udp4'] = ('86.43.88.90',10892)
 
 udp4_contacts = {}
 
@@ -30,11 +32,16 @@ class udp4_contact():
     
 
 sock = socket(AF_INET, SOCK_DGRAM)
-sock.bind(('',15892))
+sock.bind(('',10892))
 
 listen_running = True
 
+
+def process_unsecuredmsg(addr,packet):
+    pass
+
 def process_received(addr,data):
+    pack_switch = {85:process_unsecuredmsg}
     print("Incoming! ", addr, data)
 
 class listen(threading.Thread):
