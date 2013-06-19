@@ -127,7 +127,7 @@ def process_unsecuredmsg(addr,packet):
         Msg.timeout = 255
         Msg.security = 0
         Msg.seqid = struct.unpack("H",packet[25:27])[0]
-        
+        print(Msg.seqid)
         messages.process_message(Msg)
     else: print("[BOGUS]: Message received from unknown peer")
 
@@ -168,7 +168,7 @@ def process_received(addr, packet):
         pack_switch[int(packet[0])](addr,packet)
     except KeyError:
         print("[BOGUS]: Invalid start byte " + str(int(packet[0])))
-
+    
 #Process incoming delivery receipt        
 def process_ack(addr,packet):
     seqid = struct.unpack("H",packet[25:27])[0]
@@ -192,7 +192,7 @@ def bcast():
     
 
 def send_unsecuredmsg(lc,seq,msg):
-    hdr = struct.pack("B",85) + lan_uid + struct.pack("H",seq) + bytes(msg,'UTF-8')
+    hdr = struct.pack("B",85) + lan_uid + struct.pack("H",seq) + msg
     if(lan_contacts[lc]):
             print("Sending unsec msg \n Addr:" + lan_contacts[lc].b_addr +"\n Port:" + str(lan_contacts[lc].b_port))
             sock.sendto(hdr,(lan_contacts[lc].b_addr,lan_contacts[lc].b_port))

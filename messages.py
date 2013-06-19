@@ -38,7 +38,7 @@ def msg_to_box(nick,contents,transport):
     buffy.insert_with_tags(enditer,time.strftime("[%H:%M:%S]"),tag_in1)
     buffy.insert_with_tags(enditer," Sender: " + nick,tag_in2)
     buffy.insert_with_tags(enditer," (via " + tp.friendly[transport] +")\n",tag_in3)
-    buffy.insert_with_tags(enditer,str(contents,'UTF-8') + "\n\n",tag_in4)
+    buffy.insert_with_tags(enditer,contents + "\n\n",tag_in4)
     tb.scroll_to_mark(buffy.get_insert(),0,False,0.5,0.5)
 
 def gen_seqid(mc):
@@ -56,8 +56,11 @@ def process_ack(maincontact,transport,seqid):
         print("Message sequence " + str(seqid) + " delivered")
     else: print("[BOGUS]: Message identifier invalid")
 
-def process_message(Msg_obj):
+def process_message(Msg_obj,compression = True):
     #tx = "Message from: " + contacts.Contactlist[Msg_obj.mc].nick + " Transport: " + Msg_obj.transport + "\n" + str(Msg_obj.contents,'UTF-8') + "\n\n"
+
+    if(compression == True):
+        Msg_obj.contents = fivebit.decompress(Msg_obj.contents)
 
     GLib.idle_add(msg_to_box,contacts.Contactlist[Msg_obj.mc].nick,Msg_obj.contents,Msg_obj.transport)
     #Send receipt
@@ -67,14 +70,21 @@ def process_message(Msg_obj):
     #notification.sys_beep()
     #Mainwindow.set_urgency_hint(True)
     
-def send_message(maincontact,transport,sec,body):
+def send_message(maincontact,transport,sec,body,compression = True):
+
+    if(compression == True):
+        to_send = fivebit.compress(body)
+    else:
+        to_send = bytes(body,'UTF-8')
+
+    
     if not (maincontact in contacts.Contactlist): return False
     seqid = gen_seqid(maincontact)
     contacts.Contactlist[maincontact].Messages_pending[seqid] = body
     if(transport == "lan"):      
-        transport_lan.sendmsg(contacts.Contactlist[maincontact],body,seqid)
+        transport_lan.sendmsg(contacts.Contactlist[maincontact],to_send,seqid)
     elif(transport == "udp4"):
-        transport_udp4_direct.sendmsg(contacts.Contactlist[maincontact],body,seqid)
+        transport_udp4_direct.sendmsg(contacts.Contactlist[maincontact],to_send,seqid)
 
     msg_out_box(contacts.Contactlist[maincontact].nick,body,transport)
     
