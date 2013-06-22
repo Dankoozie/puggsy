@@ -22,6 +22,9 @@ import transport_udp4_direct
 ##import transport_sbd
 ##import transport_torchat
 
+
+
+
 #GUI handlers
 
 def Kwitt(blah,larg):
@@ -36,8 +39,8 @@ def nick_changed(entry):
 
 def set_transports_combo():
     transport_list.clear()
-
-    if len(contacts.Contactlist) == 0:
+    print("TP_Clr")
+    if (len(contacts.Contactlist) == 0) or (contacts.Selected == -1) :
         return False
     
     for a in contacts.Contactlist[contacts.Selected].Transports:
@@ -49,8 +52,9 @@ def tvs_changed(blah):
     for path in p:
         tree_iter = m.get_iter(path)
         value = m.get_value(tree_iter,0)
-        contacts.Selected = value
-        sendinfo.set_text("Destination: " + contacts.Contactlist[value].nick)
+        if(value > -1):
+            contacts.Selected = value
+            sendinfo.set_text("Destination: " + contacts.Contactlist[value].nick)
 
     set_transports_combo()
     
@@ -62,6 +66,13 @@ def msgbox_keypress(widge,event):
        messages.send_message(contacts.Selected,"lan",None,sb.get_text()) 
        sb.set_text("")
        print(transport_select.get_active())
+
+def contact_add(widge):
+    if (len(contacts.Contactlist) == 0) or (contacts.Selected == -1) :
+        return False
+    contacts.Contactlist[contacts.Selected].save()
+    
+
 #End GUI handlers
     
 builder = Gtk.Builder()
@@ -146,7 +157,7 @@ def presence_changed(bjk):
 Yourname_box.set_text(Myself.nick)
 
 #Contacts list set-up
-collem = Gtk.TreeViewColumn('Contacts')
+collem = Gtk.TreeViewColumn("Contacts")
 tv.append_column(collem)
 
 cell = Gtk.CellRendererText()
@@ -174,11 +185,15 @@ handlers = {
     "contact_showdetails": contacts.gui_showdetails,
     "wcd_close": contacts.wcd_close,
     "menu_about": show_about,
-    "presence_changed": presence_changed
+    "presence_changed": presence_changed,
+    "contact_add":contact_add
 }
 builder.connect_signals(handlers)
 
-#messages.msg_to_box("boll",bytes("licks",'UTF-8'))
+
+
+
+
 
 Gtk.main()
 

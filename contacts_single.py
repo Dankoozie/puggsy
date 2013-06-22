@@ -3,15 +3,11 @@ from gi.repository import GdkPixbuf
 from gi.repository import GLib
 
 TreeStore = Gtk.TreeStore(int,str,GdkPixbuf.Pixbuf)
+sc_iter = TreeStore.append(None,[0,"Saved contacts",None])
+sc1 = TreeStore.append(sc_iter,[1,"Some fool",None])
+ld_iter = TreeStore.append(None,[1,"Local detected",None])
 
-
-sc_iter = TreeStore.append(None,[-2,"Saved (0)",None])
-ld_iter = TreeStore.append(None,[-1,"Local (0)",None])
-ua_iter = TreeStore.append(None,[-3,"Unreachable (0)",None])
-
-
-
-gui_contactlist = TreeStore
+gui_contactlist = Gtk.ListStore(int,str,GdkPixbuf.Pixbuf)
 tp_l = Gtk.ListStore(str,int)
 
 Contactlist = {}
@@ -28,12 +24,10 @@ Builder = None
 pixbuf_grn = GdkPixbuf.Pixbuf.new_from_file_at_size("./graphics/grn.png",16,16)
 pixbuf_red = GdkPixbuf.Pixbuf.new_from_file_at_size("./graphics/red.png",16,16)
 pixbuf_orn = GdkPixbuf.Pixbuf.new_from_file_at_size("./graphics/orn.png",16,16)
-pixbuf_unr = GdkPixbuf.Pixbuf.new_from_file_at_size("./graphics/unr.png",16,16)
+pixbuf_unr = GdkPixbuf.Pixbuf.new_from_file_at_size("./graphics/orn.png",16,16)
 presence_pb = {0:pixbuf_grn,1:pixbuf_orn,2:pixbuf_red,3:pixbuf_unr}
 presence_text = {0:"Available",1:"Away",2:"Offline",3:"Unreachable"}
 
-#sc1 = TreeStore.append(sc_iter,[1,"Some eejit",pixbuf_red])
-#sc2 = TreeStore.append(ld_iter,[1,"Some fool",pixbuf_grn])
     
 def wcd_close(w,e):
     w.hide()
@@ -97,7 +91,7 @@ class Contact:
         self.list_it = None
         self.Transports = {}
         self.Transport_info_string = {}
-        self.saved = False     
+        self.autodel = True     
         self.nfid = nfid()
 
         #0 = online,1=away,2=offline,3=unreachable
@@ -114,23 +108,10 @@ class Contact:
         #self.Messages_outgoing = {}
 
         self.Messages_pending = {}
-
-    def save(self):
-        if(self.saved == False):
-            GLib.idle_add(ui_remove,self.list_it)
-            self.saved = True
-            self.list_it = None
-            self.ui_update()
         
     def ui_nick(self):
-        #Select list to store contact on (saved / local detect / unreachable)
-        if(self.saved == True):
-            parent_iter = sc_iter
-            if(self.presence == 3): parent_iter = ua_iter
-        else: parent_iter = ld_iter
-            
         if(self.list_it): gui_contactlist[self.list_it] = [self.nfid,self.nick,presence_pb[self.presence]]
-        else: self.list_it = gui_contactlist.append(parent_iter,[self.nfid,self.nick,presence_pb[self.presence]])
+        else: self.list_it = gui_contactlist.append([self.nfid,self.nick,presence_pb[self.presence]])
         return False
 
     def ui_update(self):
@@ -148,14 +129,7 @@ class Contact:
     def add_transport(self,transport,key):
         self.Transports[transport] = key
         
-    def del_transport(self,transport):
-       del self.Transports[transport]
-       if(self.Transports == {}):
-           self.presence = 3
-           GLib.idle_add(ui_remove,self.list_it)
-           self.list_it = None
-        
-       self.ui_update()
-        #Only store&forwards = Red
-        #Direct transport available = Do nothing
+    #def del_transport(self,transport):
+    #   del self.Transports[transport]
+    #  if(self.autodel and (not self.Transports)): del(self)
 
