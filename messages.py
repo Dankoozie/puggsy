@@ -1,6 +1,5 @@
 from gi.repository import Gtk,Pango,GLib
 import contacts
-import transport_lan
 import notification
 import fivebit
 import time
@@ -46,9 +45,6 @@ def gen_seqid(mc):
     for i in range(0,65535):
         if(not (i in sp)): return i
 
-def send_ack(Msg_obj):
-    transport_lan.send_ack(Msg_obj.mc,Msg_obj.seqid)
-
 def process_ack(maincontact,transport,seqid):
     mc = contacts.Contactlist[maincontact]
     if(seqid in mc.Messages_pending):
@@ -64,7 +60,7 @@ def process_message(Msg_obj,compression = True):
 
     GLib.idle_add(msg_to_box,contacts.Contactlist[Msg_obj.mc].nick,Msg_obj.contents,Msg_obj.transport)
     #Send receipt
-    send_ack(Msg_obj)
+    tp.send_ack("lan",Msg_obj.mc,Msg_obj.seqid)
 
     #Notify
     #notification.sys_beep()
@@ -80,11 +76,8 @@ def send_message(maincontact,transport,sec,body,compression = True):
     
     if not (maincontact in contacts.Contactlist): return False
     seqid = gen_seqid(maincontact)
-    contacts.Contactlist[maincontact].Messages_pending[seqid] = body
-    if(transport == "lan"):      
-        transport_lan.sendmsg(contacts.Contactlist[maincontact],to_send,seqid)
-    elif(transport == "udp4"):
-        transport_udp4_direct.sendmsg(contacts.Contactlist[maincontact],to_send,seqid)
+    contacts.Contactlist[maincontact].Messages_pending[seqid] = body      
+    tp.send_msg(transport,contacts.Contactlist[maincontact],to_send,seqid)
 
     msg_out_box(contacts.Contactlist[maincontact].nick,body,transport)
     

@@ -1,21 +1,18 @@
+import tp
+
 from gi.repository import Gtk
 from gi.repository import GdkPixbuf
 from gi.repository import GLib
 
-TreeStore = Gtk.TreeStore(int,str,GdkPixbuf.Pixbuf)
-
-
-sc_iter = TreeStore.append(None,[-2,"Saved (0)",None])
-ld_iter = TreeStore.append(None,[-1,"Local (0)",None])
-ua_iter = TreeStore.append(None,[-3,"Unreachable (0)",None])
-
-
-
-gui_contactlist = TreeStore
-tp_l = Gtk.ListStore(str,int)
 
 Contactlist = {}
 Selected = -1
+
+#Tree Store of contact list
+gui_contactlist = Gtk.TreeStore(int,str,GdkPixbuf.Pixbuf)
+sc_iter = gui_contactlist.append(None,[-2,"Saved (0)",None])
+ld_iter = gui_contactlist.append(None,[-1,"Local (0)",None])
+ua_iter = gui_contactlist.append(None,[-3,"Unreachable (0)",None])
 
 #Gui items
 Selbox = None
@@ -23,6 +20,12 @@ Sel_lbl = None
 Nick_box = None
 Builder = None
 
+tp_l = Gtk.ListStore(str,int) #Info box transport list 
+tp_combo = Gtk.ListStore(str,GdkPixbuf.Pixbuf) #Combo box select transport
+
+#Pixbuf transports
+pixbuf_lan = GdkPixbuf.Pixbuf.new_from_file_at_size("./graphics/lan.png",16,16)
+pixbuf_bt = GdkPixbuf.Pixbuf.new_from_file_at_size("./graphics/bt.png",16,16)
 
 #Presence icons
 pixbuf_grn = GdkPixbuf.Pixbuf.new_from_file_at_size("./graphics/grn.png",16,16)
@@ -31,9 +34,6 @@ pixbuf_orn = GdkPixbuf.Pixbuf.new_from_file_at_size("./graphics/orn.png",16,16)
 pixbuf_unr = GdkPixbuf.Pixbuf.new_from_file_at_size("./graphics/unr.png",16,16)
 presence_pb = {0:pixbuf_grn,1:pixbuf_orn,2:pixbuf_red,3:pixbuf_unr}
 presence_text = {0:"Available",1:"Away",2:"Offline",3:"Unreachable"}
-
-#sc1 = TreeStore.append(sc_iter,[1,"Some eejit",pixbuf_red])
-#sc2 = TreeStore.append(ld_iter,[1,"Some fool",pixbuf_grn])
     
 def wcd_close(w,e):
     w.hide()
@@ -59,7 +59,7 @@ def gui_showdetails(Treeview,path,view_column):
     #Transports treeview
     tp_l.clear()
     for a in Contactlist[gv].Transports:
-        tp_l.append([a+ "\nnewline",Contactlist[gv].Transports[a]])
+        tp_l.append([a+ "\nnewline",868])
     
 def nfid():
     if len(Contactlist) == 0: return 0
@@ -69,14 +69,19 @@ def nfid():
         else:
                 return i
 
-def ui_remove(list_it):
+def ui_remove(list_it,nfid):
     gui_contactlist.remove(list_it)
+    ui_unselect(nfid)
     return False
 
-def ui_unselect():
-    Sel_lbl.set_text("No recipient selected")
-    Sb = Selbox.get_selection()
-    Sb.unselect_all()
+def ui_unselect(nfid):
+    global Selected
+    if(Selected == nfid):
+        Selected = -1
+        Sel_lbl.set_text("No recipient selected")
+        Sb = Selbox.get_selection()
+        Sb.unselect_all()
+        tp_combo.clear()
     return False
 
 class Message_in:
@@ -92,19 +97,26 @@ class Message_in:
         self.seqid = 0
         
 class Contact:
-    def __init__(self):
-        self.nick = ""
+    def __init__(self,nick,presence):
+        self.nick = nick
         self.list_it = None
         self.Transports = {}
+        #self.Tsi = {} #Transport specific information
         self.Transport_info_string = {}
         self.saved = False     
         self.nfid = nfid()
 
+        #Identifiers
+        self.li = None
+        self.gi = None
+        self.si = None
         #0 = online,1=away,2=offline,3=unreachable
-        self.presence = 0
+        self.presence = presence
+        self.current_list = 0
+        
         self.lastseen = 0 # Time
 
-        Contactlist[self.nfid] = self
+        Contactlist[self.nfid] = self # Add self to main contact list
 
         self.level = 5
         self.otp_id = -1
@@ -117,34 +129,43 @@ class Contact:
 
     def save(self):
         if(self.saved == False):
-            GLib.idle_add(ui_remove,self.list_it)
             self.saved = True
-            self.list_it = None
             self.ui_update()
+
+    def select(self):
+        global Selected
+        Selected = self.nfid
+        GLib.idle_add(self.ui_settpl)
+
+    def ui_settpl(self):    
+        tp_combo.clear()
+        for a in self.Transports:
+            tp_combo.append([a,pixbuf_lan])
         
-    def ui_nick(self):
+    def ui_set(self):
         #Select list to store contact on (saved / local detect / unreachable)
-        if(self.saved == True):
-            parent_iter = sc_iter
-            if(self.presence == 3): parent_iter = ua_iter
-        else: parent_iter = ld_iter
-            
+        if(self.saved == True and self.presence == 3): parent_iter = ua_iter
+        elif(self.saved == True and self.presence != 3): parent_iter = sc_iter
+        else:parent_iter = ld_iter
+
+        if((self.current_list != 0) and (parent_iter != self.current_list)):
+            ui_remove(self.list_it,self.nfid)
+            self.list_it = None
+
+        self.current_list = parent_iter        
         if(self.list_it): gui_contactlist[self.list_it] = [self.nfid,self.nick,presence_pb[self.presence]]
-        else: self.list_it = gui_contactlist.append(parent_iter,[self.nfid,self.nick,presence_pb[self.presence]])
+        else: self.list_it = gui_contactlist.append(parent_iter,[self.nfid,self.nick,presence_pb[self.presence]])       
         return False
 
     def ui_update(self):
-        GLib.idle_add(self.ui_nick)
+        GLib.idle_add(self.ui_set)
+        if(self.nfid == Selected): GLib.idle_add(self.ui_settpl)
     
     def __del__(self):
-        global Selected
         print("Delself")
-        GLib.idle_add(ui_remove,self.list_it)
+        if(self.list_it != None):
+            GLib.idle_add(ui_remove,self.list_it,self.nfid)
         
-        if(self.nfid == Selected):
-            Selected = -1
-            GLib.idle_add(ui_unselect)
-            
     def add_transport(self,transport,key):
         self.Transports[transport] = key
         
@@ -152,10 +173,25 @@ class Contact:
        del self.Transports[transport]
        if(self.Transports == {}):
            self.presence = 3
-           GLib.idle_add(ui_remove,self.list_it)
-           self.list_it = None
-        
-       self.ui_update()
+           #Delete self if not saved and no transports remaining
+           if(self.saved == True): self.ui_update()
+           else: self.tibetan_monk()
         #Only store&forwards = Red
         #Direct transport available = Do nothing
+       
+    def tibetan_monk(self):
+        print("Tibetan monk")
+        if(self.nfid == Selected): GLib.idle_add(tp_combo.clear())        
+        del(Contactlist[self.nfid])
+
+def contact_by_li(li):
+    for ctact in Contactlist:
+        if(Contactlist[ctact].li == li): return Contactlist[ctact].nfid
+    return -1
+
+def all_with_transport(tp_name):
+    lst = []
+    for ctact in Contactlist:
+        if('lan' in Contactlist[ctact].Transports): lst.append(ctact)
+    return(lst)
 

@@ -5,46 +5,22 @@ from gi.repository import GObject
 from gi.repository import GdkPixbuf
 GObject.threads_init()
 
+import tp
+
 from myself import Myself,save
 import contacts
 import messages
-
-import transport_lan
-#import transport_serial
-#import transport_bluetooth
-import transport_udp4_direct
-#import transport_tcp_direct
-#import transport_udp_storeforward
-#import transport_http_storeforward
-##import transport_nfc
-##import transport_ar
-##import transport_sms
-##import transport_sbd
-##import transport_torchat
-
-
-
 
 #GUI handlers
 
 def Kwitt(blah,larg):
     print("Kwitting!")
     save()
-    transport_lan.Shutdown()
+    tp.disable_transport("lan")
     Gtk.main_quit()
  
 def nick_changed(entry):
     Myself.nick = Yourname_box.get_text()
-
-
-def set_transports_combo():
-    transport_list.clear()
-    print("TP_Clr")
-    if (len(contacts.Contactlist) == 0) or (contacts.Selected == -1) :
-        return False
-    
-    for a in contacts.Contactlist[contacts.Selected].Transports:
-        transport_list.append([a,pixbuf_lan])
 
 def tvs_changed(blah):
     (m,p) = blah.get_selected_rows()
@@ -53,10 +29,9 @@ def tvs_changed(blah):
         tree_iter = m.get_iter(path)
         value = m.get_value(tree_iter,0)
         if(value > -1):
-            contacts.Selected = value
+            contacts.Contactlist[value].select()
             sendinfo.set_text("Destination: " + contacts.Contactlist[value].nick)
-
-    set_transports_combo()
+        else: contacts.tp_combo.clear()    
     
 def sendmsg(blah):
     messages.send_message(contacts.Selected,"lan",None,sb.get_text())
@@ -68,11 +43,17 @@ def msgbox_keypress(widge,event):
        print(transport_select.get_active())
 
 def contact_add(widge):
+    print("Widge",contacts.Selected)
     if (len(contacts.Contactlist) == 0) or (contacts.Selected == -1) :
         return False
     contacts.Contactlist[contacts.Selected].save()
     
-
+def contact_del(widge):
+    if (len(contacts.Contactlist) == 0) or (contacts.Selected == -1) :
+        return False
+    print("Delling..")
+    del(contacts.Contactlist[contacts.Selected])
+    
 #End GUI handlers
     
 builder = Gtk.Builder()
@@ -93,21 +74,14 @@ messages.tb = mview
 
 aboutwindow = builder.get_object("aboutdialog")
 
-#Pixbuf
-pixbuf_lan = GdkPixbuf.Pixbuf.new_from_file_at_size("./graphics/lan.png",16,16)
-pixbuf_bt = GdkPixbuf.Pixbuf.new_from_file_at_size("./graphics/bt.png",16,16)
 
-#Transport select box
+#Transport select combo box
 transport_select = builder.get_object("sel_transport")
-transport_list = Gtk.ListStore(str,GdkPixbuf.Pixbuf)
-transport_select.set_model(transport_list)
-
+transport_select.set_model(contacts.tp_combo)
 tpl_cell = Gtk.CellRendererText()
 tpl_pcell = Gtk.CellRendererPixbuf()
-
 transport_select.pack_start(tpl_cell,True)
 transport_select.pack_start(tpl_pcell,False)
-
 transport_select.add_attribute(tpl_cell,'text',0)
 transport_select.add_attribute(tpl_pcell,'pixbuf',1)
 
@@ -186,14 +160,9 @@ handlers = {
     "wcd_close": contacts.wcd_close,
     "menu_about": show_about,
     "presence_changed": presence_changed,
-    "contact_add":contact_add
+    "contact_add":contact_add,
+    "contact_del":contact_del
 }
 builder.connect_signals(handlers)
 
-
-
-
-
-
 Gtk.main()
-
