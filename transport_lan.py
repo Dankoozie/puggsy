@@ -23,7 +23,6 @@ sock.bind(('',listen_port))
 lan_uid = Myself.l_uid
 Myself.Transports['lan'] = 1
 
-
 class Lan_Contact():
     def __init__(self,ip,port,interval):
         self.ip = ip
@@ -64,6 +63,14 @@ def process_broadcast(addr,packet):
     Contactobject.presence = status
     Contactobject.ui_update()
     if(bcast_request): bcast_send() # Notify new peer that you are around
+
+
+#Process LAN broadcast packet ('C<ch>,<nick>,msg')
+def process_broadcast_message(addr,packet):
+    m = packet[1:]
+    m = str(m,'UTF-8').split(",",2)
+    messages.process_broadcast_message("lan",m[0],m[1],m[2])
+
 
 #Process Unsecured LAN message('M<sender lan_uid><message>')        
 def process_unsecuredmsg(addr,packet):
@@ -106,6 +113,7 @@ def process_securedmsg(addr,packet):
 def process_received(addr, packet):
     pack_switch = {65:process_ack,
                    66:process_broadcast,
+                   67:process_broadcast_message,
                    73:process_info,
                    83:process_securedmsg,
                    84:process_transport_list,
@@ -149,6 +157,9 @@ def send_ack(mc,seq):
     lc = contacts.Contactlist[mc].Transports['lan']
     hdr = struct.pack("B",65) + struct.pack("H",seq)
     sock.sendto(hdr,(lc.ip,lc.port))
+
+def send_bcast_message(ch,msg):
+    sock.sendto(bytes("C" + ch + "," + Myself.nick + "," + msg,'UTF-8'),(bcast_addr,bcast_port))
 
 def checktimeouts():
     tdel = []

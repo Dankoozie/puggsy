@@ -32,18 +32,20 @@ def tvs_changed(blah):
             contacts.Contactlist[value].select()
             sendinfo.set_text("Destination: " + contacts.Contactlist[value].nick)
         else: contacts.tp_combo.clear()    
-    
-def sendmsg(blah):
-    messages.send_message(contacts.Selected,"lan",None,sb.get_text())
 
 def msgbox_keypress(widge,event):
-    if(event.keyval == 65293):
-       messages.send_message(contacts.Selected,"lan",None,sb.get_text()) 
-       sb.set_text("")
-       print(transport_select.get_active())
+    gm = transport_select.get_model()
+    ta = transport_select.get_active_iter()
+    if(ta != None): print(gm.get_value(ta,0))
+    if(event.keyval == 65293 and contacts.Selected > -1):
+          messages.send_message(contacts.Selected,"lan",None,sb.get_text())
+          sb.set_text("")
 
+    elif(event.keyval == 65293 and sb.get_text()[:1] == "#"):
+        tp.send_bcast("lan","",sb.get_text()[1:])
+        sb.set_text("")
+        
 def contact_add(widge):
-    print("Widge",contacts.Selected)
     if (len(contacts.Contactlist) == 0) or (contacts.Selected == -1) :
         return False
     contacts.Contactlist[contacts.Selected].save()
@@ -73,7 +75,6 @@ mview.set_buffer(messages.buffy)
 messages.tb = mview
 
 aboutwindow = builder.get_object("aboutdialog")
-
 
 #Transport select combo box
 transport_select = builder.get_object("sel_transport")
@@ -149,7 +150,6 @@ window.show_all()
 def show_about(bjk):
     aboutwindow.run()
     aboutwindow.hide()
-
 
 handlers = {
     "onDeleteWindow": Kwitt,

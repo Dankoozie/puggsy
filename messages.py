@@ -24,6 +24,9 @@ tag_in4 = buffy.create_tag("in4",foreground="#000000",weight=400)
 tag_out1 = buffy.create_tag("out1",foreground="#2071ae",weight=600)
 tag_out2 = buffy.create_tag("out2",foreground="#2071ae",weight=400)
 
+tag_bcast1 = buffy.create_tag("bcast1",foreground="#eace15",weight=600)
+tag_bcast2 = buffy.create_tag("bcast2",foreground="#eace15",weight=400)
+
 def msg_out_box(dest,contents,transport):
     enditer = buffy.get_end_iter()
     buffy.insert_with_tags(enditer,time.strftime("[%H:%M:%S]"),tag_in1)
@@ -51,6 +54,13 @@ def process_ack(maincontact,transport,seqid):
         del(mc.Messages_pending[seqid])
         print("Message sequence " + str(seqid) + " delivered")
     else: print("[BOGUS]: Message identifier invalid")
+
+def process_broadcast_message(tp,ch,nick,msg):
+    enditer = buffy.get_end_iter()
+    buffy.insert_with_tags(enditer,time.strftime("[%H:%M:%S]"),tag_in1)
+    buffy.insert_with_tags(enditer," LAN Broadcast: " + nick + " ",tag_bcast1)
+    buffy.insert_with_tags(enditer,msg + "\n\n",tag_in4)
+    tb.scroll_to_mark(buffy.get_insert(),0,False,0.5,0.5)
 
 def process_message(Msg_obj,compression = True):
     #tx = "Message from: " + contacts.Contactlist[Msg_obj.mc].nick + " Transport: " + Msg_obj.transport + "\n" + str(Msg_obj.contents,'UTF-8') + "\n\n"
@@ -80,7 +90,7 @@ def send_message(maincontact,transport,sec,body,compression = True):
     tp.send_msg(transport,contacts.Contactlist[maincontact],to_send,seqid)
 
     msg_out_box(contacts.Contactlist[maincontact].nick,body,transport)
-    
+
 class Msg_in:
     def __init__(self):
         pass

@@ -26,6 +26,9 @@ tp_combo = Gtk.ListStore(str,GdkPixbuf.Pixbuf) #Combo box select transport
 #Pixbuf transports
 pixbuf_lan = GdkPixbuf.Pixbuf.new_from_file_at_size("./graphics/lan.png",16,16)
 pixbuf_bt = GdkPixbuf.Pixbuf.new_from_file_at_size("./graphics/bt.png",16,16)
+pixbuf_udp4 = GdkPixbuf.Pixbuf.new_from_file_at_size("./graphics/wan.png",16,16)
+transport_icon = {'lan':pixbuf_lan,'bt':pixbuf_bt,'udp4':pixbuf_udp4}
+
 
 #Presence icons
 pixbuf_grn = GdkPixbuf.Pixbuf.new_from_file_at_size("./graphics/grn.png",16,16)
@@ -140,7 +143,7 @@ class Contact:
     def ui_settpl(self):    
         tp_combo.clear()
         for a in self.Transports:
-            tp_combo.append([a,pixbuf_lan])
+            tp_combo.append([a,transport_icon[a]])
         
     def ui_set(self):
         #Select list to store contact on (saved / local detect / unreachable)
@@ -159,29 +162,32 @@ class Contact:
 
     def ui_update(self):
         GLib.idle_add(self.ui_set)
-        if(self.nfid == Selected): GLib.idle_add(self.ui_settpl)
+        #if(self.nfid == Selected): GLib.idle_add(self.ui_settpl)
     
     def __del__(self):
         print("Delself")
         if(self.list_it != None):
             GLib.idle_add(ui_remove,self.list_it,self.nfid)
         
-    def add_transport(self,transport,key):
-        self.Transports[transport] = key
+    def add_transport(self,transport,tpo):
+        self.Transports[transport] = tpo
+        
         
     def del_transport(self,transport):
-       del self.Transports[transport]
-       if(self.Transports == {}):
+        del self.Transports[transport]
+        if(self.Transports == {}):
            self.presence = 3
            #Delete self if not saved and no transports remaining
            if(self.saved == True): self.ui_update()
            else: self.tibetan_monk()
+        else:
+            if(self.nfid == Selected): GLib.idle_add(self.ui_settpl)
         #Only store&forwards = Red
         #Direct transport available = Do nothing
        
     def tibetan_monk(self):
         print("Tibetan monk")
-        if(self.nfid == Selected): GLib.idle_add(tp_combo.clear())        
+        if(self.nfid == Selected): GLib.idle_add(tp_combo.clear)        
         del(Contactlist[self.nfid])
 
 def contact_by_li(li):
