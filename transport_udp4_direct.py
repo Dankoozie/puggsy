@@ -21,12 +21,33 @@ sock.bind(('',10892))
 
 listen_running = True
 
+def peer_by_ipport(addr,port):
+    return False
 
+#Process unsec message ('U<reachable time><status><nick>,msg')
 def process_unsecuredmsg(addr,packet):
-    pass
+    m = packet[6:]
+    m = str(m,'UTF-8').split(",",1)
+    nick = m[0]
+    msg = m[1]
+
+    #Unpack reachable time / status
+    
+    if(peer_by_ipport(addr[0],addr[1])):
+       pass #Known peer
+    else:
+       LTO = udp4_contact(addr[0],addr[1])
+       Contactobject = contacts.Contact(m[0],0)
+       
 
 def process_received(addr,data):
     pack_switch = {85:process_unsecuredmsg}
+
+    try:
+        pack_switch[int(packet[0])](addr,packet)
+    except KeyError:
+        print("[BOGUS]: Invalid start byte " + str(int(packet[0])))
+
     print("Incoming! ", addr, data)
 
 class listen(threading.Thread):

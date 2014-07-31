@@ -1,0 +1,15 @@
+*LAN broadcast message
+	-#Channels
+
+*HTTP Storeforeward
+	-Server PHP script
+
+*UDP Storeforward
+	-Server python script
+	-Client transport
+
+*Transport lan
+	-Process transport list*
+	-Send/generate transport list
+	
+*UDP4 - Public IP address detector

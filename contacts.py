@@ -118,6 +118,7 @@ class Contact:
         self.current_list = 0
         
         self.lastseen = 0 # Time
+        self.timeout = 0
 
         Contactlist[self.nfid] = self # Add self to main contact list
 
