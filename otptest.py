@@ -13,3 +13,5 @@ print(cdr.stats())
 print(b)
 
 print(available_dirs())
+
+print(Gen_disposable())

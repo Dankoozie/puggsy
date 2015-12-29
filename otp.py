@@ -4,23 +4,31 @@ from struct import unpack,pack
 from os import listdir
 import entropy
 
-
+RNDSource = '/dev/urandom'
 OTPDir = "./otp/"
+
+disposables_target = 64
 
 file_num = 0
 offset = 0
 
 class Otp_creator:
 
-    def __init__(random_source='/dev/urandom'):
+    def __init__():
         pass
 
 def available_dirs():
     ld = listdir(OTPDir)
     return ld
 
+def Gen_disposable():
+    rs = open(RNDSource,'rb')
+    bn = rs.read(8)
+    return(unpack(">Q",bn)[0])
+
 def OTP_by_disposable(otpid):
     #Get one time pad by disposable ID
+
     pass
 
 
@@ -35,15 +43,14 @@ class Otp_coder:
     def loadstate(self,cid):
         sf = open(OTPDir + str(cid) + "/state.txt","r")
         self.in_file_active = self.out_file_active = int(sf.readline())
-        (fid,io,oo) = sf.readline().split(":")
+        (fid,io,oo,disposables) = sf.readline().split(":")
 
-        self.disposables = sf.readline()
-        print(self.disposables)
-        
+
         self.in_file_active = int(fid)
         self.out_file_active = int(fid)
         self.in_offset = int(io)
         self.out_offset = int(oo)
+        self.disposables = disposables.split(",")
 
     def loadpads(self,cid):
         f = open(OTPDir + str(cid) + "/in.0","rb")
