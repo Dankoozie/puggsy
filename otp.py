@@ -19,8 +19,8 @@ def available_dirs():
     ld = listdir(OTPDir)
     return ld
 
-def OTP_by_identifier(otpid):
-    #The identifier is the first 8 unused bytes of a OTP
+def OTP_by_disposable(otpid):
+    #Get one time pad by disposable ID
     pass
 
 
@@ -36,6 +36,10 @@ class Otp_coder:
         sf = open(OTPDir + str(cid) + "/state.txt","r")
         self.in_file_active = self.out_file_active = int(sf.readline())
         (fid,io,oo) = sf.readline().split(":")
+
+        self.disposables = sf.readline()
+        print(self.disposables)
+        
         self.in_file_active = int(fid)
         self.out_file_active = int(fid)
         self.in_offset = int(io)
