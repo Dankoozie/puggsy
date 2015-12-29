@@ -1,20 +1,39 @@
 #Python one-time pad encryption module
 from zlib import crc32
 from struct import unpack,pack
+from os import listdir
+import entropy
+
+
+OTPDir = "./otp/"
 
 file_num = 0
 offset = 0
 
+class Otp_creator:
+
+    def __init__(random_source='/dev/urandom'):
+        pass
+
+def available_dirs():
+    ld = listdir(OTPDir)
+    return ld
+
+def OTP_by_identifier(otpid):
+    #The identifier is the first 8 unused bytes of a OTP
+    pass
+
+
 class Otp_coder:
 
     def savestate(self,cid):
-        sf = open("./otp/" + str(cid) + "/state.txt","w")
-        sf.write("0\n") # Default file pair in use
-        sf.write("0:" + str(self.in_offset) + ":" + str(self.out_offset) + "\n")
+        sf = open(OTPDir + str(cid) + "/state.txt","w")
+        sf.write(str(cid) + "\n") # Default file pair in use
+        sf.write(str(cid) + ":" + str(self.in_offset) + ":" + str(self.out_offset) + "\n")
         sf.close()
 
     def loadstate(self,cid):
-        sf = open("./otp/" + str(cid) + "/state.txt","r")
+        sf = open(OTPDir + str(cid) + "/state.txt","r")
         self.in_file_active = self.out_file_active = int(sf.readline())
         (fid,io,oo) = sf.readline().split(":")
         self.in_file_active = int(fid)
@@ -23,12 +42,18 @@ class Otp_coder:
         self.out_offset = int(oo)
 
     def loadpads(self,cid):
-        f = open("./otp/" + cid + "/in.0","rb")
-        o = open("./otp/" + cid + "/in.0","rb")
+        f = open(OTPDir + str(cid) + "/in.0","rb")
+        o = open(OTPDir + str(cid) + "/out.0","rb")
         self.in_contents = f.read()
         self.out_contents = o.read()
         f.close()
         o.close()
+
+    def stats(self):
+        pused_in = (self.in_offset / len(self.in_contents))*100
+        pused_out = (self.out_offset / len(self.out_contents))*100
+
+        return((round(pused_in,2),round(pused_out,2),self.in_offset,self.out_offset,len(self.in_contents),len(self.out_contents)))
     
     def __init__(self,contact_id):
         functional = False
@@ -48,19 +73,29 @@ class Otp_coder:
         send_offset = self.out_offset  #Offset value for sending to other party (initial offset of message)    
         cs = 0
         el = bytearray()
+
+        if((len(ba_str) + self.out_offset) > len(self.out_contents) + 4):
+            print("Out of pad material")
+            return(('',''))
+        
         for a in range(0,len(ba_str)):
-            el.append(ba_str[a] ^ self.out_contents[a+self.out_offset])
+            el.append(ord(ba_str[a]) ^ self.out_contents[a+self.out_offset])
 
         self.out_offset = self.out_offset + len(ba_str)
 
         
         xorlong = unpack(">L",self.out_contents[self.out_offset:self.out_offset+4])
-        cs = (crc32(ba_str) ^ xorlong[0])        
+
+        cs = (crc32(bytes(ba_str,'utf-8')) ^ xorlong[0])        
         self.out_offset = self.out_offset + 4
         self.savestate(0)
-        return (pack(">BQL",0,send_offset,cs),el)
+        return (pack(">BQL",0,send_offset,cs), el)
 
     def decrypt(self,ba_str,bql):
+        if(len(bql) != 13):
+            print("Invalid header")
+            return (False,"")
+            
         (file,offset,crc) = unpack(">BQL",bql)
 
         if(offset < self.in_offset):
