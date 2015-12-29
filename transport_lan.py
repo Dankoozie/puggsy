@@ -9,6 +9,10 @@ from myself import Myself
 first_broadcast = True
 transport_trusted = True
 
+#Log level
+import logging
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+
 #Set up socket stuff
 sock = socket(AF_INET6, SOCK_DGRAM)
 bcast_addr = "ff02::1"
@@ -46,22 +50,29 @@ def process_broadcast(addr,packet):
     LTO = Lan_Contact(addr[0],addr[1],interval)
     
     #Ignore packets from self 
-    if(uid == lan_uid): return
+    if(uid == lan_uid):
+        logging.debug("LAN: Own broadcast received")
+        return
+    
     #print("Incoming broadcast\n Nick:" + str(nick,'UTF-8') + "\nUID: " + str(binascii.hexlify(uid),'utf-8'))
     getmain = contacts.contact_by_li(uid)
 
     if (getmain == -1):
+        logging.debug("LAN: New broadcast contact detected")
        #Create a brand new contact from scratch
-       Contactobject = contacts.Contact(nick,status)
-       Contactobject.li = uid
+        Contactobject = contacts.Contact(nick,status)
+        Contactobject.li = uid
     else:
-       Contactobject = contacts.Contactlist[getmain]
+        Contactobject = contacts.Contactlist[getmain]
+        logging.debug("LAN: Existing contact detected")
 
     #Add LAN transport to this object
     Contactobject.Transports['lan'] = LTO
     Contactobject.nick = nick
     Contactobject.presence = status
     Contactobject.ui_update()
+
+    
     if(bcast_request): bcast_send() # Notify new peer that you are around
 
 
@@ -75,7 +86,11 @@ def process_broadcast_message(addr,packet):
 #Process Unsecured LAN message('M<sender lan_uid><message>')        
 def process_unsecuredmsg(addr,packet):
     peer = peer_by_lan_ipport(addr[0],addr[1])
-    print("Unsec msg incoming")
+    if(peer == -1):
+        logging.warning("Message received for peer not on contact list")
+        return 0
+
+    logging.info("LAN: Unencrypted message from " + str(addr[0]) +  ":"+ str(addr[1]))
     if(peer != -1):
         #Attributes of received message
         Msg = contacts.Message_in(peer,packet[3:],"lan")
@@ -89,10 +104,13 @@ def process_unsecuredmsg(addr,packet):
 
 #Process 'sign off' packet
 def process_signoff(addr,packet):
+    logging.info("LAN: Peer " + addr[0] + " has signed off")
     getmain = contacts.contact_by_li(packet[1:25])
     if(getmain != -1):
         contacts.Contactlist[getmain].del_transport("lan")
-        print("Peer signing off")
+        logging.debug("LAN: Removing LAN transport from this peer")
+    else:
+        logging.debug("LAN: Peer not found on contact list")
 
 
 def process_transport_list(addr,packet):
@@ -111,6 +129,7 @@ def process_securedmsg(addr,packet):
     
 #Handles incoming UDP packet
 def process_received(addr, packet):
+    
     pack_switch = {65:process_ack,
                    66:process_broadcast,
                    67:process_broadcast_message,
@@ -150,15 +169,17 @@ def bcast():
 def send_msg(mc,seq,msg):
     lc = mc.Transports['lan']
     hdr = struct.pack("B",85) + struct.pack("H",seq) + msg
-    print("Sending unsec msg \n Addr:" + lc.ip +"\n Port:" + str(lc.port))
+    logging.info("LAN: Sending unencrypted message to "  + lc.ip +"\n Port:" + str(lc.port))
     sock.sendto(hdr,(lc.ip,lc.port))
 
 def send_ack(mc,seq):
     lc = contacts.Contactlist[mc].Transports['lan']
     hdr = struct.pack("B",65) + struct.pack("H",seq)
+    logging.info("LAN: Sending acknowledgement to "  + lc.ip +"\n Port:" + str(lc.port))
     sock.sendto(hdr,(lc.ip,lc.port))
 
 def send_bcast_message(ch,msg):
+    logging.info("LAN: Sent broadcast message")
     sock.sendto(bytes("C" + ch + "," + Myself.nick + "," + msg,'UTF-8'),(bcast_addr,bcast_port))
 
 def checktimeouts():
@@ -195,7 +216,9 @@ class listen(threading.Thread):
     def run(self):
         while listen_running:
             data, addr = sock.recvfrom(1024)
+            logging.debug("LAN: Received packet of length " + str(len(data)) + " from: " + addr[0] + ":" + str(addr[1]))
             process_received(addr, data)
+                          
 bcast()
 listener = listen()
 listener.start()

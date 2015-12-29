@@ -11,6 +11,11 @@ from myself import Myself,save
 import contacts
 import messages
 
+
+#Log level
+import logging
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+
 #GUI handlers
 
 def Kwitt(blah,larg):
@@ -34,6 +39,8 @@ def tvs_changed(blah):
         else: contacts.tp_combo.clear()    
 
 def msgbox_keypress(widge,event):
+    #Handles keypresses - for example when user presses enter to send a message
+    logging.debug(event.keyval)
     gm = transport_select.get_model()
     ta = transport_select.get_active_iter()
     if(ta != None): print(gm.get_value(ta,0))
@@ -75,6 +82,8 @@ mview.set_buffer(messages.buffy)
 messages.tb = mview
 
 aboutwindow = builder.get_object("aboutdialog")
+addwindow = builder.get_object("contact_add_form")
+
 
 #Transport select combo box
 transport_select = builder.get_object("sel_transport")
@@ -147,9 +156,17 @@ tv.set_model(contacts.gui_contactlist)
 
 window.show_all()
 
+
+#Menu bar handlers
 def show_about(bjk):
     aboutwindow.run()
     aboutwindow.hide()
+    print("Show about box")
+
+def show_add(bjk):
+    addwindow.show()
+    print("Show add contact box")
+    
 
 handlers = {
     "onDeleteWindow": Kwitt,
@@ -161,7 +178,8 @@ handlers = {
     "menu_about": show_about,
     "presence_changed": presence_changed,
     "contact_add":contact_add,
-    "contact_del":contact_del
+    "contact_del":contact_del,
+    "show_add":show_add
 }
 builder.connect_signals(handlers)
 
