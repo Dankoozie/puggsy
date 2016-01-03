@@ -1,17 +1,15 @@
 from otp import *
 from zlib import crc32
 
+
+
+a = (Gen_blockids(0,0))
+#Save_blockids(0,0,a)
+
 cdr = Otp_coder(0)
-cdr.loadpads(0)
-cdr.loadstate(0)
+cdr.loadpickle(0)
 
-
-a = (cdr.encrypt("Bequerel",0))
-print(a)
-b = (cdr.decrypt(a[1],a[0]))
-print(cdr.stats())
-print(b)
-
-print(available_dirs())
-
-print(Gen_disposable())
+k = cdr.encryptblock(0,bytes("I wouldn't mind a can of Einstok",'utf-8'))
+print(k)
+print(len(k[0] + k[1] + k[2]))
+#print(Gen_disposables(100))
