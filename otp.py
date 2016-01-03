@@ -180,5 +180,6 @@ class Otp_coder:
 
         return (pack(">Q",bid[0]), el, mack.digest())
 
-
+    def decryptblock(self,blokid,ba_str):
+        pass
 
