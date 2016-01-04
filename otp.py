@@ -10,9 +10,10 @@ import hmac
 
 RNDSource = '/dev/urandom'
 OTPDir = "./otp/"
-
 BLOK_SIZE=512
 disposables_target = 64
+HASHFUNC = 'sha256'
+
 
 file_num = 0
 offset = 0
@@ -71,9 +72,16 @@ class Otp_coder:
         sf.close()
 
     def loadpickle(self,fid):
-        lto = open(OTPDir +  str(self.contactid) + "/" + "blocks." + str(fid),'rb')
+        #Outgoing pad
+        lto = open(OTPDir +  str(self.contactid) + "/" + "blocks-out." + str(fid),'rb')
         self.blocks_out = pickle.load(lto)
         lto.close()
+
+        #Incoming pad
+        lfrom = open(OTPDir +  str(self.contactid) + "/" + "blocks-in." + str(fid),'rb')
+        self.blocks_in = pickle.load(lfrom)
+        lfrom.close()
+
 
     def savepickle(self,cid):
         sf = open(OTPDir + str(cid) + "/state.txt","w")
@@ -156,8 +164,12 @@ class Otp_coder:
         else:
             return(False,"")
 
-    def getblok(self,padid,blokid):
-        o = open(OTPDir + str(self.contactid) + "/out." + str(padid),"rb")
+    def getblok(self,padid,blokid,direction = 0):
+        if(direction == 0): pdir = "/out."
+        else: pdir = "/in."
+
+        
+        o = open(OTPDir + str(self.contactid) + pdir + str(padid),"rb")
         o.seek(blokid*BLOK_SIZE)
         return(o.read(BLOK_SIZE))
 
@@ -167,19 +179,39 @@ class Otp_coder:
         bid = self.blocks_out.popitem()
         print(bid)
 
-        blok = self.getblok(padid,bid[1][0])
+        blok = self.getblok(padid,bid[1][0],0)
   
         el = bytearray()
         for a in range(0,len(ba_str)):
             el.append(ba_str[a] ^ blok[a])
 
         #Destroyblok(padid,bid[1][2])
-        mack = hmac.new(bid[1][1],ba_str,'sha256')
+        mack = hmac.new(bid[1][1],ba_str,HASHFUNC)
 
   
 
         return (pack(">Q",bid[0]), el, mack.digest())
 
-    def decryptblock(self,blokid,ba_str):
-        pass
+    def decryptblock(self,ba_str):
+        padid = unpack(">Q",ba_str[:8])[0]
+        print(padid)
+        if(padid in self.blocks_in):
+            print("Block " + str(padid) + " found")
+        else:
+            print("Invalid block")
+            return False
 
+        blok = self.getblok(0,self.blocks_in[padid][0],1)
+
+        el = bytearray()
+        for a in range(0,len(ba_str)-40):
+            el.append(ba_str[8+a] ^ blok[a])
+
+        mack = hmac.new(self.blocks_in[padid][1],el,HASHFUNC)
+                
+        res = hmac.compare_digest(mack.digest(),ba_str[-32:])
+
+        if(res == True):
+            return el
+        else: return False
+        

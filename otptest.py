@@ -12,4 +12,9 @@ cdr.loadpickle(0)
 k = cdr.encryptblock(0,bytes("I wouldn't mind a can of Einstok",'utf-8'))
 print(k)
 print(len(k[0] + k[1] + k[2]))
-#print(Gen_disposables(100))
+
+
+print("Decrypting")
+
+print(cdr.decryptblock(k[0] + k[1] + k[2]))
+
