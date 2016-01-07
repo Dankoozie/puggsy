@@ -18,3 +18,5 @@ print("Decrypting")
 
 print(cdr.decryptblock(k[0] + k[1] + k[2]))
 
+
+print(cdr.stats())

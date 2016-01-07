@@ -5,12 +5,13 @@ from math import floor
 import pickle
 from os import listdir
 from os.path import getsize
-import entropy
+#import entropy
 import hmac
 
 RNDSource = '/dev/urandom'
 OTPDir = "./otp/"
 BLOK_SIZE=512
+Destroystr = bytes(chr(0) * BLOK_SIZE,'utf-8')
 disposables_target = 64
 HASHFUNC = 'sha256'
 
@@ -37,6 +38,13 @@ def Gen_disposables(qty):
     for i in range(1,qty):
         lst.append(Gen_disposable())
     return lst
+
+def DestroyBlock(path,blockno):
+    eff = open(path,'wb')
+    eff.seek(blockno* BLOK_SIZE)
+    eff.write(Destroystr)
+    eff.close()
+    
 
 def Gen_blockids(padid,fileid):
     rs = open(RNDSource,'rb')
@@ -76,14 +84,21 @@ class Otp_coder:
         self.blocks_in = pickle.load(lfrom)
         lfrom.close()
 
-    def savepickle(self,cid):
-        sf = open(OTPDir + str(cid) + "/state.txt","w")
+    def savepickle(self,fid):
+        sf = open(OTPDir +  str(self.contactid) + "/" + "blocks-in." + str(fid),'wb')
+        pickle.dump(self.blocks_in,sf)
+        sf.close
+
+        sf = open(OTPDir +  str(self.contactid) + "/" + "blocks-out." + str(fid),'wb')
+        pickle.dump(self.blocks_out,sf)
+        sf.close
+        
 
     def stats(self):
-        pused_in = (self.in_offset / len(self.in_contents))*100
-        pused_out = (self.out_offset / len(self.out_contents))*100
-
-        return((round(pused_in,2),round(pused_out,2),self.in_offset,self.out_offset,len(self.in_contents),len(self.out_contents)))
+        free_in = len(self.blocks_in) 
+        free_out = len(self.blocks_out)
+        
+        return(free_in,free_out)
     
     def __init__(self,contact_id):
         functional = False
@@ -110,9 +125,10 @@ class Otp_coder:
         for a in range(0,len(ba_str)):
             el.append(ba_str[a] ^ blok[a])
 
-        #Destroyblok(padid,bid[1][2])
+        DestroyBlock(OTPDir + str(self.contactid) + "/in.0",bid[1][0])
+        self.savepickle(self.contactid)
+        
         mack = hmac.new(bid[1][1],ba_str,HASHFUNC)
-
   
 
         return (pack(">Q",bid[0]), el, mack.digest())
@@ -137,6 +153,7 @@ class Otp_coder:
         res = hmac.compare_digest(mack.digest(),ba_str[-32:])
 
         if(res == True):
+            DestroyBlock(OTPDir + str(self.contactid) + "/in.0",self.blocks_in[padid][0])
             return el
         else: return False
         
