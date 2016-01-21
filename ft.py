@@ -1,5 +1,6 @@
 import time
-import fivebit
+import fivebit as fivebit
+import entropy
 import random
 s = fivebit.Substitute()
 a = s.sub("tree")
@@ -19,13 +20,14 @@ print("Compressing random string 65536 characters, range 26-128 Dictionary on...
 tstr = teststr()
 starttime = time.time()
 d = fivebit.compress(tstr)
-print("Execution time: " + str(time.time() - starttime))
+print("Execution time: " + str(time.time() - starttime) + " compressed length: " +str(len(d))  )
 
 print("Decompressing random string 65536 characters, range 26-128 Dictionary on...")
 starttime = time.time()
 dec = fivebit.decompress(d)
 print("Execution time: " + str(time.time() - starttime))
 print( dec==tstr)
+
 
 print("Compressing random string 65536 characters, range 26-128 Dictionary off...")
 starttime = time.time()
@@ -70,9 +72,13 @@ for i in range(50000):
 	lst.append(teststr(random.randrange(1,15),1,255) + " ")
 
 wordlist = "".join(lst)
+
+print("Shannon entropy: " + str(entropy.shannon_entropy(wordlist)))
+
 print("Testing compression time with dictionary enabled")
 starttime = time.time()
 d = fivebit.compress(wordlist,True)
+print("Shannon entropy: " + str(entropy.shannon_entropy(d)))
 print("Execution time: " + str(time.time() - starttime))
 print("Testing compression time with dictionary disabled")
 starttime = time.time()
