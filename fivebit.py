@@ -136,7 +136,7 @@ class Substitute:
         spl = strin.split(" ")
         if(usedict):
             for x in spl:
-                if(x in dic1024.values()):
+                if(x in dict_reverse):
                     op.extend(dict_code(x))
                     ld = False
                     ed = True
