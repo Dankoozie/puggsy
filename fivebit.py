@@ -168,19 +168,12 @@ class Substitute:
 
         for a in str_in:
             c_num = ord(a)
-            if(c_num in range(97,123)): cl.append(c_num - 97)
+            if(a in std_chars.values()): cl.append(c_num - 97)
 
-            elif(c_num in range(65,97)): #Upper case and [\]^_`
+            elif(a in std_ucase.values()): #Upper case and [\]^_`
                 cl.extend([27,c_num - 65])
 
-            elif(c_num == 32): #Space
-                cl.append(26)
-
-
-            elif(c_num in range(33,65)): 
-                cl.extend(num_chars[c_num])
-                dict_check = False
-            elif(c_num in range(32,65)): cl.extend(num_chars[c_num])
+            elif(a in num_chars.values()): cl.extend(num_chars[c_num])
 
             else:
                 #UTF-8
