@@ -51,18 +51,17 @@ def gui_showdetails(Treeview,path,view_column):
     Selection = Treeview.get_selection()
     (Gls,tree_iter) = Selection.get_selected()
     gv = Gls.get_value(tree_iter,0)
-    print(Contactlist[gv].nick)
 
-    #Populate window
-    Nick_lbl.set_text(Contactlist[gv].nick)
-    Presence_lbl.set_text("Status: " + presence_text[Contactlist[gv].presence])
-    
-    Detailwindow.show_all()
+    if(gv> -1 ):
+        print(Contactlist[gv].nick)
+        #Populate window
+        Nick_lbl.set_text(Contactlist[gv].nick)
+        Presence_lbl.set_text("Status: " + presence_text[Contactlist[gv].presence])
+        Detailwindow.show_all()
 
-    #Transports treeview
-    tp_l.clear()
-    for a in Contactlist[gv].Transports:
-        tp_l.append([a+ "\nnewline",868])
+        #Transports treeview
+        tp_l.clear()
+        for a in Contactlist[gv].Transports: tp_l.append([a+ "\nnewline",868])
     
 def nfid():
     if len(Contactlist) == 0: return 0
