@@ -1,5 +1,7 @@
+import logging
 import transport_lan
 import transport_udp4_direct
+
 #import transport_serial
 #import transport_bluetooth
 #import transport_tcp_direct
@@ -20,7 +22,7 @@ def disable_transport(tp_name):
     global transport_lan
     if(tp_name == 'lan'): transport_lan.Shutdown()
     del(transport_lan)
-    print("Transport ", tp_name , " disabled")
+    logging.debug("TRANSPORT: " + tp_name + " disabled")
 
 def send_msg(tp_name,mc,to_send,seqid):
     if(tp_name == 'lan'): transport_lan.send_msg(mc,seqid,to_send)
