@@ -1,8 +1,11 @@
 #!/usr/bin/python3
 
+
+import gi
 from gi.repository import Gtk
 from gi.repository import GObject
 from gi.repository import GdkPixbuf
+gi.require_version('Gtk','3.0')
 GObject.threads_init()
 
 import tp

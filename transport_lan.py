@@ -105,6 +105,12 @@ def process_unsecuredmsg(addr,packet):
 #Process 'sign off' packet
 def process_signoff(addr,packet):
     logging.info("LAN: Peer " + addr[0] + " has signed off")
+
+    if(len(packet)>24):
+        if(packet[1:25]) == lan_uid:
+            logging.debug("LAN: Own signoff packet received")
+            return False
+    
     getmain = contacts.contact_by_li(packet[1:25])
     if(getmain != -1):
         contacts.Contactlist[getmain].del_transport("lan")

@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0,'./fivebit/') #Get rid of this later when fivebit is a real lib
+
 from gi.repository import Gtk,Pango,GLib
 import contacts
 import notification
