@@ -97,6 +97,14 @@ class Message_in:
         self.contents = contents
         self.multipart = ()
         self.seqid = 0
+
+class Convo:
+    def __init__(self):
+        self.tree_item = None
+        self.messages = {}
+        self.logfile = ''
+        
+        
         
 class Contact:
     def __init__(self,nick,presence):
@@ -107,6 +115,8 @@ class Contact:
         self.Transport_info_string = {}
         self.saved = False     
         self.nfid = nfid()
+
+        self.convo = None
 
         #Identifiers
         self.li = None
