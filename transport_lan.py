@@ -22,6 +22,10 @@ bcast_time = 15
 bcast_remove_factor = 3.1
 bcast_running = True
 listen_running = True
+
+
+sock.setsockopt(IPPROTO_IPV6, IPV6_MULTICAST_HOPS, 1)
+
 sock.bind(('',listen_port))
 
 lan_uid = Myself.l_uid
@@ -78,6 +82,7 @@ def process_broadcast(addr,packet):
 
 #Process LAN broadcast packet ('C<ch>,<nick>,msg')
 def process_broadcast_message(addr,packet):
+    logging.debug("LAN: Broadcast message from " + str(addr[0]) +  ":"+ str(addr[1]))
     m = packet[1:]
     m = str(m,'UTF-8').split(",",2)
     messages.process_broadcast_message("lan",m[0],m[1],m[2])
