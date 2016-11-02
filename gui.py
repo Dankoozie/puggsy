@@ -85,9 +85,11 @@ mview.set_buffer(messages.buffy)
 
 messages.tb = mview
 
+#Extra windows
 aboutwindow = builder.get_object("aboutdialog")
 addwindow = builder.get_object("contact_add_form")
 
+contact_add_form = builder.get_object("contact_add_form")
 
 #Transport select combo box
 transport_select = builder.get_object("sel_transport")
@@ -160,6 +162,12 @@ tv.set_model(contacts.gui_contactlist)
 
 window.show_all()
 
+#Contact add window
+def addcontact_cancel(bjk):
+    contact_add_form.hide()
+
+def addcontact_add(bjk):
+    print("This button does nothing yet")
 
 #Menu bar handlers
 def show_about(bjk):
@@ -183,7 +191,10 @@ handlers = {
     "presence_changed": presence_changed,
     "contact_add":contact_add,
     "contact_del":contact_del,
-    "show_add":show_add
+    "show_add":show_add,
+    "on_addcontact_cancel_clicked":addcontact_cancel,
+    "on_addcontact_add_clicked":addcontact_add
+    
 }
 builder.connect_signals(handlers)
 
